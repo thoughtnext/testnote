@@ -40,7 +40,7 @@ app.use(express.static('public'));
  *
  */
 
-if (!(configuration.APP_SECRET && configuration.VALIDATION_TOKEN && configuration.PAGE_ACCESS_TOKEN && configuration.SERVER_URL)) {
+if (!(configuration.APP_SECRET && configuration.VALIDATION_TOKEN && configuration.PAGE_ACCESS_TOKEN )) {
   console.error("Missing config values");
   process.exit(1);
 }
