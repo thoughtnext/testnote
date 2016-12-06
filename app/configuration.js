@@ -3,7 +3,7 @@
  * set them using environment variables or modifying the config file in /config.
  *
  */
-const config = require('config');
+// const config = require('config');
 
 const APP_SECRET = (process.env.MESSENGER_APP_SECRET) 
 
