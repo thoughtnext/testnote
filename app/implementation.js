@@ -27,7 +27,7 @@ module.exports = function() {
 
   var whereToCheckEvents = function(senderID) {
     var nearBy = fbTemplate.createPostBackButton('NEARBY ME', constants.NEARBY_ME)
-    var otherCity = fbTemplate.createWebViewButton('https://b42d8b70.ngrok.io?user=' + senderID, 'OTHER CITY', 'compact')
+    var otherCity = fbTemplate.createWebViewButton('https://timenotebot.herokuapp.com?user=' + senderID, 'OTHER CITY', 'compact')
     var message = fbTemplate.buttonMessage('Ok. So where do you want to check the events ?', [nearBy, otherCity])
     return fbTemplate.reply(message, senderID)
   }

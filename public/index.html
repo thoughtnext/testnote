@@ -1,59 +1,65 @@
-<!-- 
+<!DOCTYPE html>
+<html ng-app="myApp">
 
-Copyright 2016-present, Facebook, Inc.
-All rights reserved.
+<head>
+   <meta charset="utf-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+   <script>
+   document.write('<base href="' + document.location + '" />');
+   </script>
+   <title>Timenote</title>
+   <!-- Angular Material style sheet -->
+   <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css" />
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+   <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+   <link href="assets/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300" rel="stylesheet">
+   <link rel="stylesheet" href="assets/css/style.css" />
+   <link rel="shortcut icon" href="assets/images/tiny.png" />
+   <!-- Angular Material requires Angular.js Libraries -->
+   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-route.min.js"></script>
+   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-resource.min.js"></script>
+   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
+   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
+   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+   <!-- Angular Material Library -->
+   <script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>
+   <script src="https://maps.googleapis.com/maps/api/js?sensor=false&libraries=places"></script>
+   <script src="https://jvandemo.github.io/angularjs-google-maps/dist/angularjs-google-maps.js"></script>
+   <!-- Prealoader -->
+   <script src="app/app.js"></script>
+</head>
 
-This source code is licensed under the license found in the
-LICENSE file in the root directory of this source tree.
-
--->
-<html>
-  <head>
-    <title>Messenger Demo</title>
-  </head>
-  <body>
-    <script>
-      window.fbAsyncInit = function() {
-        FB.init({
-          appId: 'APP_ID',
-          xfbml: true,
-          version: 'v2.6'
-        });
-      };
-
-      (function(d, s, id){
-         var js, fjs = d.getElementsByTagName(s)[0];
-         if (d.getElementById(id)) {return;}
-         js = d.createElement(s); js.id = id;
-         js.src = "//connect.facebook.net/en_US/sdk.js";
-         fjs.parentNode.insertBefore(js, fjs);
-       }(document, 'script', 'facebook-jssdk'));
-    </script>
-
-    <h1>Messenger Demo</h1>
-
-    <div>
-      <p>The "Send to Messenger" plugin will trigger an authentication callback to your webhook.</p>
-
-      <div class="fb-send-to-messenger" 
-        messenger_app_id='APP_ID'
-        page_id='PAGE_ID'
-        data-ref="PASS_THROUGH_PARAM" 
-        color="blue" 
-        size="standard">
+<body>
+   <nav class="navbar navbar-custom " role="navigation">
+      <div class="container">
+         <div class="navbar-header">
+            <a class="navbar-brand page-scroll" href="#page-top">
+               <a class="navbar-brand"><img class="img-responsive" src="assets/images/timenote_logo.png" alt=""></a> <span class="light">Timenote</span>
+            </a>
+         </div>
       </div>
-    </div>
+   </nav>
+   <header class="intro" ng-controller="Ctrl">
+      <div class="intro-body">
+         <div class="container">
+            <div class="row">
+               <div class="col-md-4 col-md-offset-3">
+                  <div class="form-group-lg ">
+                     <div class="icon-addon addon-lg">
+                        <input type="text" gm-places-autocomplete ng-model="autocomplete" placeholder="Search your location" class="form-control search-lg" id="search">
+                        <a ng-href="" ng-click="show();" class="pointer"><img class="img-responsive loc" src="assets/images/ic_add_location.png" alt=""></a>
+                     </div>
+                  </div>
+               </div>
+               <div class="col-md-3 input-group-btn">
+                  <button class="btn btn-primary btn-lg search-btn" type="submit" ng-click="sendLocation()">Send Location</button>
+               </div>
+            </div>
+         </div>
+   </header>
+</body>
 
-    <div>
-      <p>The "Message Us" plugin takes the user directly to Messenger and into a thread with your Page.</p>
-
-      <div class="fb-messengermessageus" 
-        messenger_app_id='APP_ID'
-        page_id='PAGE_ID'
-        color="blue"
-        size="standard">
-      </div>
-    </div>
-
-  </body>
 </html>
