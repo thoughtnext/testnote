@@ -16,10 +16,23 @@ const
   messenger = require('./app/messenger'),
   app = express();
 
+
+  var allowCrossDomain = function(req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, Content-Type, Authorization, Accept,Content-Length, X-Requested-With, X-PINGOTHER');
+  if ('OPTIONS' === req.method) {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+};
+
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
 app.use(bodyParser.json({ verify: messenger.verifyRequestSignature }));
 app.use(express.static('public'));
+
 
 /*
  * Be sure to setup your config values before running this code. You can 
@@ -33,7 +46,7 @@ if (!(configuration.APP_SECRET && configuration.VALIDATION_TOKEN && configuratio
 }
 
 // Call FB Apis here
-
+app.use(allowCrossDomain);
 routes.configure(app);
 
 // Start server

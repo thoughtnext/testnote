@@ -1,5 +1,8 @@
-var configuration = require('./configuration')
-var messenger = require('./messenger');
+var configuration = require('./configuration'),
+  messenger = require('./messenger'),
+  api = require('./api'),
+  foo = require('./implementation'),
+  implement = foo();
 
 module.exports = {
   configure: function(app) {
@@ -87,5 +90,15 @@ module.exports = {
         redirectURISuccess: redirectURISuccess
       });
     });
+
+    app.post("/getLocation/:userid", function(req, res) {
+      // db.fetchRestaurantDetails(req.params.restaurantId, res);
+      var userid = req.params.userid;
+      console.log(userid);
+      console.log(req.body);
+      var data = JSON.parse(req.body.data);
+      implement.getEventsByLocation(data.latitude, data.longitude, data.offset, data.address, userid);
+      res.sendStatus(200)
+    })
   }
 };

@@ -3,17 +3,16 @@ var Q = require("q");
 
 function call() {
 
-  this.getEventsByLocation = function(lat, long, page) {
+  this.getEventsByLocation = function(lat, long, offset) {
       var deferred = Q.defer();
 
       var options = {
         method: 'POST',
         url: 'http://api.gotimenote.com/user/get_nearby_chatbot',
         headers: {
-          'cache-control': 'no-cache',
           'content-type': 'multipart/form-data'
         },
-        formData: { data: '{"page":"' + page + '","latitude":"43.700000","longitude":"7.250000"}' }
+        formData: { data: '{"offset":"' + offset + '","latitude":"43.700000","longitude":"7.250000"}' }
       };
 
       request(options, function(error, response, body) {
@@ -21,6 +20,7 @@ function call() {
           deferred.reject(error);
 
         } else {
+          console.log(body)
           deferred.resolve(body)
         }
       });
@@ -33,7 +33,6 @@ function call() {
         method: 'POST',
         url: 'http://api.gotimenote.com/user/get_event_chatbot',
         headers: {
-          'cache-control': 'no-cache',
           'content-type': 'multipart/form-data'
         },
         formData: { data: '{"event_id" : '+event_id+' , "password" : "lechevalblanc"}' }

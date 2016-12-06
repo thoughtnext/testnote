@@ -24,13 +24,34 @@ function createPostBackButton(title, payload) {
   }
 }
 
-function webUrlButton(type, title, url) {
+function createWebUrlButton(title, url) {
   return {
-    "type": type,
+    "type": "web_url",
     "title": title,
     "url": url
   }
 }
+
+function createWebViewButton(url, title, ratio) {
+  return {
+    "type": "web_url",
+    "url": url,
+    "title": title,
+    "webview_height_ratio": ratio
+    // "messenger_extensions": true,  
+    // "fallback_url" : url
+  }
+}
+
+              // {
+              //   "type":"web_url",
+              //   "url":"https://petersfancyapparel.com/criteria_selector",
+              //   "title":"Select Criteria",
+              //   "webview_height_ratio": "full",
+              //   "messenger_extensions": true,  
+              //   "fallback_url": "https://petersfancyapparel.com/fallback"
+              // }
+
 
 function buttonMessage(text, buttons) {
   return {
@@ -515,6 +536,8 @@ exports.textMessage = textMessage;
 exports.createQuickReply = createQuickReply;
 exports.quickReplyMessage = quickReplyMessage;
 exports.createPostBackButton = createPostBackButton;
+exports.createWebViewButton = createWebViewButton;
+// exports.createWebViewButton = createWebViewButton;
 exports.buttonMessage = buttonMessage;
 exports.locationMessage = locationMessage;
 exports.createElement = createElement;

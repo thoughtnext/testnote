@@ -11,6 +11,7 @@ define("NEARBY_ME", "NEARBY_ME");
 define("OTHER_CITY", "OTHER_CITY");
 define("DETAILS", "DETAILS");
 define("MORE", "MORE");
+define("GET_STARTED", "GET_STARTED");
 
     
 // constants.DETAILS

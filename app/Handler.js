@@ -15,13 +15,17 @@ function HandlePayload(payload, senderID) {
     implement.whereToCheckEvents(senderID)
   }
   //
+  else if (payload == constants.GET_STARTED) {
+    implement.welcome(senderID)
+  }
+  //
   else if (payload == constants.NEARBY_ME) {
     implement.promptUserForLocation(senderID)
   }
   //
-  else if (payload == constants.OTHER_CITY) {
-    implement.promptUserForOtherLocation(senderID)
-  }
+  // else if (payload == constants.OTHER_CITY) {
+  //   implement.promptUserForOtherLocation(senderID)
+  // }
   //
   else if (payload.coordinates != undefined) {
     var lat = payload.coordinates.lat
@@ -32,10 +36,10 @@ function HandlePayload(payload, senderID) {
   //
   else if (payload.indexOf(constants.MORE) != -1) {
     var str = payload.split("-");
-    var page = str[1]
+    var offset = str[1]
     var lat = str[2]
     var long = str[3]
-    implement.getEventsByLocation(lat, long, page, senderID)
+    implement.getEventsByLocation(lat, long, offset, senderID)
   }
   //
   else if (payload.indexOf(constants.DETAILS)!= -1 ) {
