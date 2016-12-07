@@ -12,7 +12,7 @@ function call() {
         headers: {
           'content-type': 'multipart/form-data'
         },
-        formData: { data: '{"offset":"' + offset + '","latitude":"43.700000","longitude":"7.250000"}' }
+        formData: { data: '{"offset":"' + offset + '","latitude":"'+lat+'","longitude":"'+long+'"}' }
       };
 
       request(options, function(error, response, body) {
