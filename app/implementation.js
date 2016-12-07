@@ -37,38 +37,46 @@ module.exports = function() {
     return fbTemplate.reply(message, senderID)
   }
 
-  var getEventsByLocation = function(lat, long, offset, address, senderID) {
+  var getEventsByLocation = function(lat, long, offset, senderID) {
+    return externalApi.getEventsByLocation(lat, long, offset)
+      .then(function(result) {
+        var body = JSON.parse(result)
+        var data = body.data.nearby;
+        var offset = body.data.offset
+        console.log(offset)
+        var btn = [];
+        var elements = [];
+        for (var i = 0; i <= data.length; i++) {
+          if (i < data.length) {
+            var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id)
+            var btn2 = fbTemplate.createShareButton()
+            var btn = [btn1, btn2];
+            elements[i] = fbTemplate.createElement(data[i].fullname, data[i].description, '', baseUrl + data[i].link, btn)
+          } else {
+            var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + '-' + offset + '-' + lat + '-' + long)
+            console.log(i)
+            elements[i] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
+          }
+        }
+
+        var message = fbTemplate.genericMessage(elements)
+        console.log(message)
+        return fbTemplate.reply(message, senderID)
+      })
+
+  }
+
+  var getEventsByUserLocation = function(lat, long, offset, address, senderID) {
     var message = fbTemplate.textMessage('Your selected location is set to:\n ' + address)
     return fbTemplate.reply(message, senderID)
       .then(function() {
-        return externalApi.getEventsByLocation(lat, long, offset)
-          .then(function(result) {
-            var body = JSON.parse(result)
-            var data = body.data.nearby;
-            var offset = body.data.offset
-            console.log(offset)
-            var btn = [];
-            var elements = [];
-            for (var i = 0; i <= data.length; i++) {
-              if (i < data.length) {
-                var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id)
-                var btn2 = fbTemplate.createShareButton()
-                var btn = [btn1, btn2];
-                elements[i] = fbTemplate.createElement(data[i].fullname, data[i].description, '', baseUrl + data[i].link, btn)
-              } else {
-                // var page = 
-                var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + '-' + offset + '-' + lat + '-' + long)
-                console.log(i)
-                elements[i] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
-              }
-            }
-
-            var message = fbTemplate.genericMessage(elements)
-            console.log(message)
-            return fbTemplate.reply(message, senderID)
-          })
+        getEventsByLocation(lat, long, offset, senderID)
       })
 
+  }
+
+  var getMoreEvents = function(lat, long, offset, senderID) {
+    getEventsByLocation(lat, long, offset,senderID)
   }
 
   var getEventById = function(id, senderID) {
@@ -111,12 +119,16 @@ module.exports = function() {
     }
   }
 
+
+
   return {
     welcome: welcome,
     whereToCheckEvents: whereToCheckEvents,
     promptUserForLocation: promptUserForLocation,
     // promptUserForOtherLocation: promptUserForOtherLocation,
     getEventsByLocation: getEventsByLocation,
+    getMoreEvents: getMoreEvents,
+    getEventsByUserLocation: getEventsByUserLocation,
     getEventById: getEventById
   };
 }

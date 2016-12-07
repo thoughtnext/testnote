@@ -1,12 +1,9 @@
 var constants = require("./payload"),
   foo = require('./implementation'),
+  externalApi = require('./api'),
   implement = foo();
 
 function HandlePayload(payload, senderID) {
-  // var payload = payload.toString()
-  console.log('\n[HandlePayload]')
-  console.log(payload)
-
   console.log('[Handler.js] payload == ' + payload)
 
   if (payload == constants.LOGIN) {
@@ -20,17 +17,21 @@ function HandlePayload(payload, senderID) {
   }
   //
   else if (payload == constants.NEARBY_ME) {
+    console.log('[Handler] \n' + payload)
     implement.promptUserForLocation(senderID)
   }
-  //
-  // else if (payload == constants.OTHER_CITY) {
-  //   implement.promptUserForOtherLocation(senderID)
-  // }
   //
   else if (payload.coordinates != undefined) {
     var lat = payload.coordinates.lat
     var long = payload.coordinates.long
-    implement.getEventsByLocation(lat, long, 0, senderID)
+    // console.log('[Handler] \n' + lat)
+    // console.log('senderID -> ' + senderID)
+    externalApi.getAddress(lat, long).then(function(result) {
+      var body = JSON.parse(result)
+      var address = body.results[2].formatted_address
+      // console.log(address)
+      implement.getEventsByUserLocation(lat, long, 0, address, senderID)
+    })
   }
 
   //
@@ -39,10 +40,10 @@ function HandlePayload(payload, senderID) {
     var offset = str[1]
     var lat = str[2]
     var long = str[3]
-    implement.getEventsByLocation(lat, long, offset, senderID)
+    implement.getMoreEvents(lat, long, offset, senderID)
   }
   //
-  else if (payload.indexOf(constants.DETAILS)!= -1 ) {
+  else if (payload.indexOf(constants.DETAILS) != -1) {
     var str = payload.split("-");
     var id = str[1];
     implement.getEventById(id, senderID)

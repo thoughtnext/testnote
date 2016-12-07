@@ -92,12 +92,11 @@ module.exports = {
     });
 
     app.post("/getLocation/:userid", function(req, res) {
-      // db.fetchRestaurantDetails(req.params.restaurantId, res);
       var userid = req.params.userid;
       console.log(userid);
       console.log(req.body);
       var data = JSON.parse(req.body.data);
-      implement.getEventsByLocation(data.latitude, data.longitude, data.offset, data.address, userid);
+      implement.getEventsByUserLocation(data.latitude, data.longitude, data.offset, data.address, userid);
       res.sendStatus(200)
     })
   }

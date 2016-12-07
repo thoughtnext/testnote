@@ -35,13 +35,31 @@ function call() {
         headers: {
           'content-type': 'multipart/form-data'
         },
-        formData: { data: '{"event_id" : '+event_id+' , "password" : "lechevalblanc"}' }
+        formData: { data: '{"event_id" : ' + event_id + ' , "password" : "lechevalblanc"}' }
       };
 
       request(options, function(error, response, body) {
         if (error) {
           deferred.reject(error);
 
+        } else {
+          deferred.resolve(body)
+        }
+      });
+      return deferred.promise;
+    },
+    this.getAddress = function(lat, lng) {
+      var deferred = Q.defer();
+      var options = {
+        method: 'GET',
+        url: 'https://maps.googleapis.com/maps/api/geocode/json',
+        qs: { latlng: lat + ',' + lng, sensor: 'true' }
+      };
+
+      request(options, function(error, response, body) {
+        if (error) {
+          console.log(error)
+          deferred.reject(error);
         } else {
           deferred.resolve(body)
         }
