@@ -2,8 +2,7 @@ var configuration = require('./configuration'),
   messenger = require('./messenger'),
   api = require('./api'),
   foo = require('./implementation'),
-  implement = foo();
-
+  implement = foo()
 module.exports = {
   configure: function(app) {
     /*

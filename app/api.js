@@ -12,7 +12,8 @@ function call() {
         headers: {
           'content-type': 'multipart/form-data'
         },
-        formData: { data: '{"offset":"' + offset + '","latitude":"'+lat+'","longitude":"'+long+'"}' }
+        // formData: { data: '{"offset":"' + offset + '","latitude":"'+lat+'","longitude":"'+long+'"}' }
+        formData: { data: '{"offset":"' + offset + '","latitude":"'+43.700000+'","longitude":"'+7.250000+'"}' }
       };
 
       request(options, function(error, response, body) {

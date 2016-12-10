@@ -1,16 +1,15 @@
 var configuration = require('./configuration'),
   fbTemplate = require('./fbTemplate'),
-  crypto = require('crypto'), 
+  crypto = require('crypto'),
   foo = require('./implementation'),
   implement = foo(),
   Handler = require("./Handler")
-
-/*
- * Verify that the callback came from Facebook. Using the App Secret from 
- * the App Dashboard, we can verify the signature that is sent with each 
- * callback in the x-hub-signature field, located in the header.
- * https://developers.facebook.com/docs/graph-api/webhooks#setup
- */
+  /*
+   * Verify that the callback came from Facebook. Using the App Secret from 
+   * the App Dashboard, we can verify the signature that is sent with each 
+   * callback in the x-hub-signature field, located in the header.
+   * https://developers.facebook.com/docs/graph-api/webhooks#setup
+   */
 function verifyRequestSignature(req, res, buf) {
   var signature = req.headers["x-hub-signature"];
 
@@ -85,7 +84,6 @@ function receivedMessage(event) {
   var messageId = message.mid;
   var appId = message.app_id;
   var metadata = message.metadata;
-
   // You may get a text or attachment but not both
   var messageText = message.text;
   var messageAttachments = message.attachments;
@@ -98,8 +96,7 @@ function receivedMessage(event) {
   } else if (quickReply) {
     var quickReplyPayload = quickReply.payload;
     console.log("\nQuick reply for message %s with payload %s", messageId, quickReplyPayload);
-    // var message = fbTemplate.textMessage('Quick reply tapped')
-    // fbTemplate.reply(message, senderID)
+
     Handler.HandlePayload(quickReplyPayload, senderID)
     return;
   }
@@ -109,15 +106,16 @@ function receivedMessage(event) {
       messageText.toString().toUpperCase() == 'HELLO' ||
       messageText.toString().toUpperCase() == 'HI') {
       implement.welcome(senderID);
+    } else {
+      
     }
 
-  }
-   else if (messageAttachments) {
+  } else if (messageAttachments) {
     var attachmentType = messageAttachments[0].type
     var attachmentPayload = messageAttachments[0].payload
-    // console.log(attachmentPayload)
-    if(attachmentType == 'location'){
-      console.log(attachmentPayload.coordinates)
+      // console.log(attachmentPayload)
+    if (attachmentType == 'location') {
+      // console.log(attachmentPayload.coordinates)
       Handler.HandlePayload(attachmentPayload, senderID)
     }
     // var message = fbTemplate.textMessage('Message with attachment received')
@@ -168,9 +166,9 @@ function receivedPostback(event) {
   // When a postback is called, we'll send a message back to the sender to 
   // let them know it was successful
   Handler.HandlePayload(payload, senderID)
-  // sendTextMessage(senderID, "Postback called");
-  // var message = fbTemplate.textMessage('Postback called')
-  // return fbTemplate.reply(message, senderID)
+    // sendTextMessage(senderID, "Postback called");
+    // var message = fbTemplate.textMessage('Postback called')
+    // return fbTemplate.reply(message, senderID)
 }
 
 /*

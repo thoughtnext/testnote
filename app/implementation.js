@@ -11,24 +11,20 @@ module.exports = function() {
   var baseUrl = 'http://api.gotimenote.com/'
   var welcome = function(senderID) {
 
-    var message = fbTemplate.textMessage('Hi User. Welcome to our bot')
+    var message = fbTemplate.textMessage('Hi User. Timenote bot allows you to explore any city in the world as a city guide. ')
     return fbTemplate.reply(message, senderID)
       .then(function() {
-        var message = fbTemplate.textMessage('Simply you can create or view events around you. You can login or explore without login as well. Please select an option ')
-        return fbTemplate.reply(message, senderID)
-      })
-      .then(function() {
         var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
-        var qr2 = fbTemplate.createQuickReply('Explore W/O Login', constants.EXPLORE_WITHOUT_LOGIN)
-        var message = fbTemplate.quickReplyMessage('Options', [qr1, qr2])
+        var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
+        var message = fbTemplate.quickReplyMessage('You can also check your calendar and see your day.', [qr1, qr2])
         return fbTemplate.reply(message, senderID)
       })
   }
 
   var whereToCheckEvents = function(senderID) {
     var nearBy = fbTemplate.createPostBackButton('NEARBY ME', constants.NEARBY_ME)
-    var otherCity = fbTemplate.createWebViewButton('https://timenotebot.herokuapp.com?user=' + senderID, 'OTHER CITY', 'compact')
-    var message = fbTemplate.buttonMessage('Ok. So where do you want to check the events ?', [nearBy, otherCity])
+    var otherCity = fbTemplate.createWebViewButton('https://timenotebot.herokuapp.com?user=' + senderID, 'ANOTHER CITY', 'tall')
+    var message = fbTemplate.buttonMessage('Discover events in the city of your choice', [nearBy, otherCity])
     return fbTemplate.reply(message, senderID)
   }
 
@@ -42,6 +38,9 @@ module.exports = function() {
       .then(function(result) {
         var body = JSON.parse(result)
         var data = body.data.nearby;
+        if (data == null) {
+          // console.log('hi')
+        }
         var offset = body.data.offset
         console.log(offset)
         var btn = [];
@@ -51,10 +50,20 @@ module.exports = function() {
             var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id)
             var btn2 = fbTemplate.createShareButton()
             var btn = [btn1, btn2];
-            elements[i] = fbTemplate.createElement(data[i].fullname, data[i].description, '', baseUrl + data[i].link, btn)
+            var date;
+            var time;
+            var datetimestamp = new Date(data[i].time * 1000)
+            var fullDate = datetimestamp.toDateString().split(' ')
+            var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
+            var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
+            var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
+            hours = hours < 10 ? "0" + hours : hours;
+            var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
+            // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
+            time = hours + ":" + minutes + " " + am_pm;
+            elements[i] = fbTemplate.createElement(data[i].fullname + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + data[i].link, btn)
           } else {
             var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + '-' + offset + '-' + lat + '-' + long)
-            console.log(i)
             elements[i] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
           }
         }
@@ -72,11 +81,10 @@ module.exports = function() {
       .then(function() {
         getEventsByLocation(lat, long, offset, senderID)
       })
-
   }
 
   var getMoreEvents = function(lat, long, offset, senderID) {
-    getEventsByLocation(lat, long, offset,senderID)
+    getEventsByLocation(lat, long, offset, senderID)
   }
 
   var getEventById = function(id, senderID) {
@@ -98,11 +106,7 @@ module.exports = function() {
             if (remainder != 0) {
               n = n + 1
             }
-            console.log('length ' + length)
-            console.log('remainder ' + remainder)
-            console.log(n)
             Substr(description, 320, senderID)
-
           })
       })
   }
@@ -119,13 +123,10 @@ module.exports = function() {
     }
   }
 
-
-
   return {
     welcome: welcome,
     whereToCheckEvents: whereToCheckEvents,
     promptUserForLocation: promptUserForLocation,
-    // promptUserForOtherLocation: promptUserForOtherLocation,
     getEventsByLocation: getEventsByLocation,
     getMoreEvents: getMoreEvents,
     getEventsByUserLocation: getEventsByUserLocation,
