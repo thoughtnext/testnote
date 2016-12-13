@@ -11,13 +11,19 @@ var fbTemplate = require('./fbTemplate'),
 module.exports = function() {
 
   var baseUrl = 'http://api.gotimenote.com/'
-  var welcome = function(senderID) {
 
-    var message = fbTemplate.textMessage('Hi User. Timenote bot allows you to explore any city in the world as a city guide. ')
-    return fbTemplate.reply(message, senderID)
-      .then(function() {
-        promptForLogin(senderID)
-      })
+  var welcome = function(senderID) {
+    externalApi.getUserProfile(senderID).then(function(user) {
+      var profile = JSON.parse(user)
+      console.log(profile)
+      var message = fbTemplate.textMessage('Hi '+ profile.first_name +'. Timenote bot allows you to explore any city in the world as a city guide. ')
+      return fbTemplate.reply(message, senderID)
+        .then(function() {
+          promptForLogin(senderID)
+        })
+    })
+
+
   }
   var promptForLogin = function(senderID) {
     var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
@@ -201,12 +207,12 @@ module.exports = function() {
     }
   }
 
-  function sorryMsg(senderID){
+  function sorryMsg(senderID) {
     var message = fbTemplate.textMessage("Sorry, I could't understand you. Here's what you can do with TimeNote Bot. ")
     return fbTemplate.reply(message, senderID)
-    .then(function(){
-      promptForLogin(senderID)
-    })
+      .then(function() {
+        promptForLogin(senderID)
+      })
   }
 
   return {

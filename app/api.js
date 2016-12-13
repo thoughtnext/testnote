@@ -1,8 +1,10 @@
-var request = require("request");
-var Q = require("q");
+var request = require("request"),
+  Q = require("q"),
+  configuration = require('./configuration')
 
 function call() {
   var API_KEY = 'AIzaSyCQE0-Edwf7xDQA4Qi-hYMdV9yxISERcRE'
+  var PAGE_ACCESS_TOKEN = configuration.PAGE_ACCESS_TOKEN
   this.getEventsByLocation = function(lat, long, offset) {
       var deferred = Q.defer();
 
@@ -98,6 +100,23 @@ function call() {
         } else {
           var result = JSON.parse(body).result.geometry.location
           deferred.resolve(result)
+        }
+      });
+      return deferred.promise;
+    },
+    this.getUserProfile = function(userID){
+       var deferred = Q.defer();
+      var options = {
+        method: 'GET',
+        url: 'https://graph.facebook.com/v2.6/'+userID+'?access_token='+PAGE_ACCESS_TOKEN
+      };
+
+      request(options, function(error, response, body) {
+        if (error) {
+          console.log(error)
+          deferred.reject(error);
+        } else {
+          deferred.resolve(body)
         }
       });
       return deferred.promise;
