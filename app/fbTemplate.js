@@ -43,16 +43,6 @@ function createWebViewButton(url, title, ratio) {
   }
 }
 
-              // {
-              //   "type":"web_url",
-              //   "url":"https://petersfancyapparel.com/criteria_selector",
-              //   "title":"Select Criteria",
-              //   "webview_height_ratio": "full",
-              //   "messenger_extensions": true,  
-              //   "fallback_url": "https://petersfancyapparel.com/fallback"
-              // }
-
-
 function buttonMessage(text, buttons) {
   return {
     attachment: {

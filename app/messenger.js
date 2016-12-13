@@ -3,13 +3,20 @@ var configuration = require('./configuration'),
   crypto = require('crypto'),
   foo = require('./implementation'),
   implement = foo(),
-  Handler = require("./Handler")
-  /*
-   * Verify that the callback came from Facebook. Using the App Secret from 
-   * the App Dashboard, we can verify the signature that is sent with each 
-   * callback in the x-hub-signature field, located in the header.
-   * https://developers.facebook.com/docs/graph-api/webhooks#setup
-   */
+  Handler = require("./Handler"),
+  json = require('./location.json'),
+  _ = require("underscore"),
+  fs = require('fs');
+
+// ,
+// session = require("./wit").findOrCreateSession,
+// wit = require("./wit").wit
+/*
+ * Verify that the callback came from Facebook. Using the App Secret from 
+ * the App Dashboard, we can verify the signature that is sent with each 
+ * callback in the x-hub-signature field, located in the header.
+ * https://developers.facebook.com/docs/graph-api/webhooks#setup
+ */
 function verifyRequestSignature(req, res, buf) {
   var signature = req.headers["x-hub-signature"];
 
@@ -102,12 +109,26 @@ function receivedMessage(event) {
   }
 
   if (messageText) {
-    if (messageText.toString().toUpperCase() == 'HEY' ||
-      messageText.toString().toUpperCase() == 'HELLO' ||
-      messageText.toString().toUpperCase() == 'HI') {
-      implement.welcome(senderID);
-    } else {
-      
+    // const sessionId = session(senderID);
+    // if (messageText.toString().toUpperCase() == 'HEY' ||
+    //   messageText.toString().toUpperCase() == 'HELLO' ||
+    //   messageText.toString().toUpperCase() == 'HI') {
+    //   implement.welcome(senderID);
+    // } else {
+
+      const context = "location";
+      var configFile = fs.readFileSync('./app/location.json');
+      var config = JSON.parse(configFile);
+      var text = messageText.toString()
+      console.log(text)
+
+      var isLocationContext = _.where(config, { 'userId': senderID, 'context': 'location' }).length
+      if (isLocationContext > 0) {
+        implement.promptCityConfirmationFromUser(text, senderID)
+
+    }
+    else {
+      implement.sorryMsg(senderID)
     }
 
   } else if (messageAttachments) {

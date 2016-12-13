@@ -8,10 +8,14 @@ function define(name, value) {
 define("LOGIN", "LOGIN");
 define("EXPLORE_WITHOUT_LOGIN", "EXPLORE_WITHOUT_LOGIN");
 define("NEARBY_ME", "NEARBY_ME");
-define("OTHER_CITY", "OTHER_CITY");
+define("ANOTHER_CITY", "ANOTHER_CITY");
 define("DETAILS", "DETAILS");
 define("MORE", "MORE");
 define("GET_STARTED", "GET_STARTED");
+define("YES_CONFIRMATION_FOR_CITY", "YES_CONFIRMATION_FOR_CITY");
+define("NO_CONFIRMATION_FOR_CITY", "NO_CONFIRMATION_FOR_CITY");
+define("RESTART", "RESTART");
+define("GO_BACK", "GO_BACK");
 
     
 // constants.DETAILS

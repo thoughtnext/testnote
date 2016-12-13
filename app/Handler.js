@@ -1,6 +1,8 @@
 var constants = require("./payload"),
   foo = require('./implementation'),
   externalApi = require('./api'),
+  context = require('./context'),
+  Q = require('q'),
   implement = foo();
 
 function HandlePayload(payload, senderID) {
@@ -19,17 +21,26 @@ function HandlePayload(payload, senderID) {
   else if (payload == constants.NEARBY_ME) {
     console.log('[Handler] \n' + payload)
     implement.promptUserForLocation(senderID)
-  }
-  //
-  else if (payload.coordinates != undefined) {
+  } else if (payload == constants.ANOTHER_CITY) {
+    console.log('[Handler] \n' + payload)
+    var obj = {
+      userId: senderID,
+      context: 'location'
+    }
+    var ready = Promise.resolve(null)
+    ready.then(function() {
+        return implement.promptUserForInputLocation(senderID)
+      })
+      .then(function() {
+        return context.addContext(obj)
+      })
+
+  } else if (payload.coordinates != undefined) {
     var lat = payload.coordinates.lat
     var long = payload.coordinates.long
-    // console.log('[Handler] \n' + lat)
-    // console.log('senderID -> ' + senderID)
     externalApi.getAddress(lat, long).then(function(result) {
       var body = JSON.parse(result)
       var address = body.results[2].formatted_address
-      // console.log(address)
       implement.getEventsByUserLocation(lat, long, 0, address, senderID)
     })
   }
@@ -48,7 +59,26 @@ function HandlePayload(payload, senderID) {
     var id = str[1];
     implement.getEventById(id, senderID)
   }
+  //
+  else if (payload.indexOf(constants.GO_BACK) != -1) {
+    implement.whereToCheckEvents(senderID)
+  }
+  //
+  else if (payload.indexOf(constants.RESTART) != -1) {
+    implement.welcome(senderID)
+  }
+  //
+  else if (payload.indexOf(constants.YES_CONFIRMATION_FOR_CITY) != -1) {
+    var index = payload.indexOf("-");
+    var str = payload
+    var placeid = str.substring(index+1);
+    implement.getCityGeometry(placeid, senderID)
+  }
+  //
+  else if (payload.indexOf(constants.NO_CONFIRMATION_FOR_CITY) != -1) {
 
+    implement.promptUserForInputLocation(senderID)
+  }
   //
   else {
     console.log('[Handler.js] payload == ' + payload)
