@@ -16,7 +16,7 @@ module.exports = function() {
     externalApi.getUserProfile(senderID).then(function(user) {
       var profile = JSON.parse(user)
       console.log(profile)
-      var message = fbTemplate.textMessage('Hi '+ profile.first_name +'. Timenote bot allows you to explore any city in the world as a city guide. ')
+      var message = fbTemplate.textMessage('Hi ' + profile.first_name + '. Timenote bot allows you to explore any city in the world as a city guide. ')
       return fbTemplate.reply(message, senderID)
         .then(function() {
           promptForLogin(senderID)
@@ -116,39 +116,48 @@ module.exports = function() {
         console.log(result)
         var body = JSON.parse(result)
         var data = body.data.nearby;
-        if (data == null) {
-          console.log('No result')
-        }
-        var offset = body.data.offset
-        console.log(offset)
-        var btn = [];
-        var elements = [];
-        for (var i = 0; i <= data.length; i++) {
-          if (i < data.length) {
-            var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id)
-            var btn2 = fbTemplate.createShareButton()
-            var btn = [btn1, btn2];
-            var date;
-            var time;
-            var datetimestamp = new Date(data[i].time * 1000)
-            var fullDate = datetimestamp.toDateString().split(' ')
-            var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
-            var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
-            var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
-            hours = hours < 10 ? "0" + hours : hours;
-            var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
-            // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
-            time = hours + ":" + minutes + " " + am_pm;
-            elements[i] = fbTemplate.createElement(data[i].fullname + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + data[i].link, btn)
-          } else {
-            var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + '-' + offset + '-' + lat + '-' + long)
-            elements[i] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
-          }
-        }
+        // if (data == null) {
+        //   console.log('No result')
+        //   var message = fbTemplate.textMessage('Sorry. There are no events to display near your location.')
+        //     // console.log(message)
+        //   return fbTemplate.reply(message, senderID)
+        //   .then(function(){
+        //     whereToCheckEvents(senderID)
+        //   })
+        // } else {
 
-        var message = fbTemplate.genericMessage(elements)
-          // console.log(message)
-        return fbTemplate.reply(message, senderID)
+          var offset = body.data.offset
+          console.log(offset)
+          var btn = [];
+          var elements = [];
+          for (var i = 0; i <= data.length; i++) {
+            if (i < data.length) {
+              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id)
+              var btn2 = fbTemplate.createShareButton()
+              var btn = [btn1, btn2];
+              var date;
+              var time;
+              var datetimestamp = new Date(data[i].time * 1000)
+              var fullDate = datetimestamp.toDateString().split(' ')
+              var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
+              var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
+              var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
+              hours = hours < 10 ? "0" + hours : hours;
+              var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
+              // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
+              time = hours + ":" + minutes + " " + am_pm;
+              elements[i] = fbTemplate.createElement(data[i].name + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + data[i].link, btn)
+            } else {
+              var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + '-' + offset + '-' + lat + '-' + long)
+              elements[i] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
+            }
+          }
+
+          var message = fbTemplate.genericMessage(elements)
+            // console.log(message)
+          return fbTemplate.reply(message, senderID)
+        // }
+
       })
       .then(function() {
         var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
