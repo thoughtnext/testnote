@@ -57,11 +57,27 @@ function HandlePayload(payload, senderID) {
   else if (payload.indexOf(constants.DETAILS) != -1) {
     var str = payload.split("-");
     var id = str[1];
-    implement.getEventById(id, senderID)
+    var lat = str[2];
+    var lng = str[3]
+    console.log(payload)
+    console.log(str)
+      // var lat = str[2]
+    var offset = 0;
+    console.log(id+' '+lat +' '+ lng)
+    implement.getEventById(id, lat, lng, offset, senderID)
   }
   //
   else if (payload.indexOf(constants.GO_BACK) != -1) {
     implement.whereToCheckEvents(senderID)
+  } else if (payload.indexOf(constants.EVENTS_LIST) != -1) {
+    var str = payload.split("-");
+    // var id = str[1];
+    var lat = str[1]
+    var lng = str[2]
+      // var lat = str[2]
+      console.log(lat +' '+ lng)
+    var offset = 0;
+    implement.getEventsByLocation( lat, lng, offset, senderID)
   }
   //
   else if (payload.indexOf(constants.RESTART) != -1) {
@@ -71,7 +87,7 @@ function HandlePayload(payload, senderID) {
   else if (payload.indexOf(constants.YES_CONFIRMATION_FOR_CITY) != -1) {
     var index = payload.indexOf("-");
     var str = payload
-    var placeid = str.substring(index+1);
+    var placeid = str.substring(index + 1);
     implement.getCityGeometry(placeid, senderID)
   }
   //

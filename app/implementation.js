@@ -105,7 +105,6 @@ module.exports = function() {
   }
 
   var getEventsByLocation = function(lat, long, offset, senderID) {
-    // console.log()
     var senderID = parseInt(senderID)
     console.log(senderID)
     console.log(lat)
@@ -126,43 +125,40 @@ module.exports = function() {
         //   })
         // } else {
 
-          var offset = body.data.offset
-          console.log(offset)
-          var btn = [];
-          var elements = [];
-          for (var i = 0; i <= data.length; i++) {
-            if (i < data.length) {
-              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id)
-              var btn2 = fbTemplate.createShareButton()
-              var btn = [btn1, btn2];
-              var date;
-              var time;
-              var datetimestamp = new Date(data[i].time * 1000)
-              var fullDate = datetimestamp.toDateString().split(' ')
-              var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
-              var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
-              var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
-              hours = hours < 10 ? "0" + hours : hours;
-              var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
-              // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
-              time = hours + ":" + minutes + " " + am_pm;
-              elements[i] = fbTemplate.createElement(data[i].name + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + data[i].link, btn)
-            } else {
-              var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + '-' + offset + '-' + lat + '-' + long)
-              elements[i] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
-            }
+        var offset = body.data.offset
+        console.log(offset)
+        var btn = [];
+        var elements = [];
+        for (var i = 0; i <= data.length; i++) {
+          if (i < data.length) {
+            var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id + '-' + lat + '-' + long)
+            var btn2 = fbTemplate.createShareButton()
+            var btn = [btn1, btn2];
+            var date;
+            var time;
+            var datetimestamp = new Date(data[i].time * 1000)
+            var fullDate = datetimestamp.toDateString().split(' ')
+            var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
+            var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
+            var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
+            hours = hours < 10 ? "0" + hours : hours;
+            var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
+            // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
+            time = hours + ":" + minutes + " " + am_pm;
+            elements[i] = fbTemplate.createElement(data[i].name + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + data[i].link, btn)
+          } else {
+            var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + '-' + offset + '-' + lat + '-' + long)
+            elements[i] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
           }
+        }
 
-          var message = fbTemplate.genericMessage(elements)
-            // console.log(message)
-          return fbTemplate.reply(message, senderID)
-        // }
-
+        var message = fbTemplate.genericMessage(elements)
+        return fbTemplate.reply(message, senderID)
       })
       .then(function() {
         var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
         var qr2 = fbTemplate.createQuickReply('Go Back', constants.GO_BACK)
-        var message = fbTemplate.quickReplyMessage('Options', [qr2, qr1])
+        var message = fbTemplate.quickReplyMessage('Choose An Action', [qr2, qr1])
         return fbTemplate.reply(message, senderID)
       })
 
@@ -180,26 +176,64 @@ module.exports = function() {
     getEventsByLocation(lat, long, offset, senderID)
   }
 
-  var getEventById = function(id, senderID) {
+  var getEventById = function(id, lat, long, offset, senderID) {
+    console.log(lat)
+    console.log(long)
+    console.log(offset)
+
     return externalApi.getEventById(id)
       .then(function(result) {
-        var body = JSON.parse(result)
-        console.log(baseUrl + body.data.timer.link)
-        var message = fbTemplate.ImageMessage(baseUrl + body.data.timer.link)
+        console.log(result)
+        var body = JSON.parse(result).data.timer
+        var timer = body.time
+        var date;
+        var time;
+        var datetimestamp = new Date(timer * 1000)
+        var fullDate = datetimestamp.toDateString().split(' ')
+        var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
+        var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
+        var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
+        hours = hours < 10 ? "0" + hours : hours;
+        var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
+        // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
+        time = hours + ":" + minutes + " " + am_pm;
+        console.log(date)
+        console.log(time)
+        console.log(baseUrl + body.link)
+        var message = fbTemplate.ImageMessage(baseUrl + body.link)
         return fbTemplate.reply(message, senderID)
           .then(function() {
-            var message = fbTemplate.textMessage(body.data.timer.fullname)
+            var message = fbTemplate.textMessage(body.name + '\n\n📅  ' + date + '\n\n⌚  ' + time + '\n\n🏁  ' + body.location_infos_uni)
             return fbTemplate.reply(message, senderID)
           })
           .then(function() {
-            var description = body.data.timer.description
+            var description = body.description
             var length = description.length
-            var remainder = length % 320
-            var n = parseInt(length / 320);
-            if (remainder != 0) {
-              n = n + 1
-            }
-            Substr(description, 320, senderID)
+            var desc = description.substr(0, 640)
+            var message = fbTemplate.textMessage(desc)
+            return fbTemplate.reply(message, senderID)
+              .then(function() {
+                var button1 = fbTemplate.createWebUrlButton('Get Android App', 'https://play.google.com/store/apps/details?id=timenote.timenote')
+                var button2 = fbTemplate.createWebUrlButton('Get iOS App', 'https://appsto.re/il/aICV5.i')
+                var message = fbTemplate.buttonMessage('For more details you can download our app from below links. ', [button1, button2])
+                return fbTemplate.reply(message, senderID)
+              })
+              .then(function() {
+                var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
+                var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
+                var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST  +'-'+ lat+'-'+long)
+                var message = fbTemplate.quickReplyMessage('Choose An Action', [qr2, qr0, qr1])
+                return fbTemplate.reply(message, senderID)
+              })
+
+            //   var remainder = length % 640
+            //   var n = parseInt(length / 640);
+            //   if (remainder != 0) {
+            //     n = n + 1
+            //   }
+            //   var msgs = Substr(description, 640, senderID)
+            //   console.log(msgs)
+
           })
       })
   }
@@ -210,10 +244,10 @@ module.exports = function() {
 
     for (var i = 0, o = 0; i < numChunks; ++i, o += size) {
       chunks[i] = str.substr(o, size);
-      console.log(chunks[i] + '\n\n')
-      var message = fbTemplate.textMessage(chunks[i])
-      fbTemplate.reply(message, senderID)
+      // console.log(chunks[i] + '\n\n')
+      // var message = fbTemplate.textMessage(chunks[i])
     }
+    return chunks
   }
 
   function sorryMsg(senderID) {
