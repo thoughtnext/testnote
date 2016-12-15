@@ -17,6 +17,7 @@ define("NO_CONFIRMATION_FOR_CITY", "NO_CONFIRMATION_FOR_CITY");
 define("RESTART", "RESTART");
 define("GO_BACK", "GO_BACK");
 define("EVENTS_LIST", "EVENTS_LIST");
+define("MORE_FEATURES", "MORE_FEATURES");
 
     
 // constants.DETAILS
