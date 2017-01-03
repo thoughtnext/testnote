@@ -31,6 +31,12 @@ function createWebUrlButton(title, url) {
     "url": url
   }
 }
+function createAccountLinkingButton(url) {
+  return {
+    "type": "account_link",
+    "url": url
+  }
+}
 
 function createWebViewButton(url, title, ratio) {
   return {
@@ -168,4 +174,5 @@ exports.createElement = createElement;
 exports.genericMessage = genericMessage;
 exports.createShareButton = createShareButton;
 exports.reply = reply;
+exports.createAccountLinkingButton = createAccountLinkingButton;
 exports.ImageMessage = ImageMessage;

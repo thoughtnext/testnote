@@ -5,7 +5,7 @@ var request = require("request"),
 function call() {
   var API_KEY = 'AIzaSyCQE0-Edwf7xDQA4Qi-hYMdV9yxISERcRE'
   var PAGE_ACCESS_TOKEN = configuration.PAGE_ACCESS_TOKEN
-  this.getEventsByLocation = function(lat, long, offset) {
+  this.getEventsByLocation = function(lat, long, offset, user_id) {
       var deferred = Q.defer();
 
       var options = {
@@ -14,7 +14,7 @@ function call() {
         headers: {
           'content-type': 'multipart/form-data'
         },
-        formData: { data: '{"offset":"' + offset + '","latitude":"'+lat+'","longitude":"'+long+'"}' }
+        formData: { data: '{"user_fb_id": "' + user_id + '","offset":"' + offset + '","latitude":"' + lat + '","longitude":"' + long + '"}' }
         // formData: { data: '{"offset":"' + offset + '","latitude":"' + 43.700000 + '","longitude":"' + 7.250000 + '"}' }
       };
 
@@ -28,7 +28,7 @@ function call() {
       });
       return deferred.promise;
     },
-    this.getEventById = function(event_id) {
+    this.getEventById = function(event_id, user_id) {
       console.log(event_id)
       var deferred = Q.defer();
       var options = {
@@ -37,14 +37,19 @@ function call() {
         headers: {
           'content-type': 'multipart/form-data'
         },
-        formData: { data: '{"event_id" : ' + event_id + ' , "password" : "lechevalblanc"}' }
+        formData: { data: '{"user_fb_id": "' + user_id + '","event_id" : "' + event_id + '" , "password" : "lechevalblanc"}' }
       };
+          console.log(options.formData)
+
 
       request(options, function(error, response, body) {
         if (error) {
           deferred.reject(error);
 
         } else {
+          console.log(options.formData)
+          console.log('api.js =>>>' + JSON.parse(body).data.is_logged)
+
           deferred.resolve(body)
         }
       });
@@ -104,11 +109,11 @@ function call() {
       });
       return deferred.promise;
     },
-    this.getUserProfile = function(userID){
-       var deferred = Q.defer();
+    this.getUserProfile = function(userID) {
+      var deferred = Q.defer();
       var options = {
         method: 'GET',
-        url: 'https://graph.facebook.com/v2.6/'+userID+'?access_token='+PAGE_ACCESS_TOKEN
+        url: 'https://graph.facebook.com/v2.6/' + userID + '?access_token=' + PAGE_ACCESS_TOKEN
       };
 
       request(options, function(error, response, body) {
@@ -117,6 +122,77 @@ function call() {
           deferred.reject(error);
         } else {
           deferred.resolve(body)
+        }
+      });
+      return deferred.promise;
+    },
+    this.checkBotUsers = function(username, user_fb_id) {
+      var deferred = Q.defer();
+      var options = {
+        method: 'POST',
+        url: 'https://api.gotimenote.com/user/check_bot_users',
+        headers: {
+          'content-type': 'multipart/form-data'
+        },
+        formData: { data: '{"username":"' + username + '","user_fb_id":"' + user_fb_id + '"}' }
+      };
+      console.log(options.url)
+      console.log(options.formData)
+      request(options, function(error, response, body) {
+        if (error) {
+          deferred.reject(error);
+
+        } else {
+          deferred.resolve(body)
+        }
+      });
+      return deferred.promise;
+    },
+    this.getProfileWebsite = function(user_fb_id, max_date, min_date) {
+      var deferred = Q.defer();
+      var options = {
+        method: 'POST',
+        url: 'https://api.gotimenote.com/user/get_profile_website',
+        headers: {
+          'content-type': 'multipart/form-data'
+        },
+        formData: { data: '{"user_fb_id":"' + user_fb_id + '","max_date":"' + max_date + '","min_date":"' + min_date + '"}' }
+      };
+      console.log(options.url)
+      console.log(options.formData)
+      request(options, function(error, response, body) {
+        if (error) {
+          deferred.reject(error);
+
+        } else {
+          // console.log(body)
+          // console.log(JSON.parse(body.data))
+          deferred.resolve(body)
+        }
+      });
+      return deferred.promise;
+    },
+    this.saveEvent = function(user_fb_id, event_id) {
+      var deferred = Q.defer();
+      var options = {
+        method: 'POST',
+        url: 'https://api.gotimenote.com/user/keep_timenote_website',
+        headers: {
+          'content-type': 'multipart/form-data'
+        },
+        formData: { data: '{"user_fb_id":"' + user_fb_id + '","event_id":"' + event_id + '"}' }
+      };
+      console.log(options.url)
+      console.log(options.formData)
+      request(options, function(error, response, body) {
+        if (error) {
+          deferred.reject(error);
+
+        } else {
+          // console.log(body)
+          // console.log(JSON.parse(body.data))
+          var result = JSON.parse(body)
+          deferred.resolve(result)
         }
       });
       return deferred.promise;

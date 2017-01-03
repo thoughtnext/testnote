@@ -1,289 +1,514 @@
 'use strict';
 
 var fbTemplate = require('./fbTemplate'),
-    constants = require("./payload"),
-    externalApi = require('./api'),
-    Q = require("q"),
-    fs = require("fs"),
-    _ = require("underscore"),
-    wit = require('./wit')
+  constants = require("./payload"),
+  externalApi = require('./api'),
+  Q = require("q"),
+  fs = require("fs"),
+  _ = require("underscore"),
+  wit = require('./wit'),
+  moment = require('moment')
 
 module.exports = function() {
 
-    var baseUrl = 'http://api.gotimenote.com/'
+  var baseUrl = 'http://api.gotimenote.com/'
 
-    var welcome = function(senderID) {
-        // externalApi.getUserProfile(senderID).then(function(user) {
-        //     var profile = JSON.parse(user)
-        //     console.log(profile)
-        //     var message = fbTemplate.textMessage('Hi ' + profile.first_name + '. Timenote bot allows you to explore any city in the world as a city guide. ')
-        //     return fbTemplate.reply(message, senderID)
-        //         .then(function() {
-                    promptForLogin(senderID)
-                // })
-        // })
-    }
-    var promptForLogin = function(senderID) {
-        var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
-        var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
-        var message = fbTemplate.quickReplyMessage('So, what do you wanna do ?', [qr1, qr2])
+  var welcome = function(senderID) {
+    externalApi.getUserProfile(senderID)
+      .then(function(user) {
+        var profile = JSON.parse(user)
+        var name = profile.first_name
+        return externalApi.checkBotUsers(name, senderID)
+      })
+      .then(function(result) {
+        console.log(result)
+        return sendLoginButton(senderID)
+          .then(function() {
+            var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
+            var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
+            return fbTemplate.reply(message, senderID)
+          })
+      })
+  }
+
+  var afterLogin = function(senderID) {
+    externalApi.getUserProfile(senderID)
+      .then(function(user) {
+        var profile = JSON.parse(user)
+        var name = profile.first_name
+        console.log(name)
+        var message = fbTemplate.textMessage('Congratulations ' + name + ' ! \nYou have successfully logged in to your TimeNote account.')
+        console.log(message)
         return fbTemplate.reply(message, senderID)
-    }
+          .then(function() {
+            console.log("Congrats")
+            return whereToCheckEventsAfterLogin(senderID)
+          })
+      })
+  }
 
-    var whereToCheckEvents = function(senderID) {
-        var nearBy = fbTemplate.createPostBackButton('NEARBY ME', constants.NEARBY_ME)
-        var otherCity = fbTemplate.createPostBackButton('ANOTHER CITY', constants.ANOTHER_CITY)
-            // var otherCity = fbTemplate.createWebViewButton('https://timenotebot.herokuapp.com?user=' + senderID, 'ANOTHER CITY', 'tall')
-        var message = fbTemplate.buttonMessage('Discover events in the city of your choice', [nearBy, otherCity])
-        return fbTemplate.reply(message, senderID)
-    }
-
-    var promptUserForInputLocation = function(senderID) {
-
-        var message = fbTemplate.textMessage('Write the city you want.')
-        return fbTemplate.reply(message, senderID)
-    }
-    var promptUserForLocation = function(senderID) {
-        var message = fbTemplate.locationMessage()
-        return fbTemplate.reply(message, senderID)
-    }
-
-    var getCity = function(city) {
-        return externalApi.getCity(city)
-            .then(function(result) {
-                return result;
-            }, function(error) {
-                console.log('Error in getting City ' + error)
+  var saveEvent = function(senderID, event_id, lat, long) {
+    externalApi.saveEvent(senderID, event_id, lat, long)
+      .then(function(result) {
+        console.log(result)
+        if (result.success == 'true') {
+          var message = fbTemplate.textMessage('This event has been successfully saved to your timeline.')
+          fbTemplate.reply(message, senderID)
+            .then(function() {
+              // console.log('hihiiihihhi')
+              var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
+              var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
+              var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
+              var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
+              return fbTemplate.reply(message, senderID)
             })
-    }
 
-    var getCityGeometry = function(placeid, senderID) {
-        return externalApi.getCityGeometry(placeid)
+        } else {
+          var message = fbTemplate.textMessage('Please login first to save this event')
+          fbTemplate.reply(message, senderID)
             .then(function(result) {
-                return result;
-            }, function(error) {
-                console.log('Error in getting placeid ' + error)
-            })
-            .then(function(location) {
-                console.log(location)
-                getEventsByLocation(location.lat, location.lng, 0, senderID)
-
-                .then(function(result) {
-                    console.log('inside')
-                    var location = result
-                    var configFile = fs.readFileSync('./app/location.json');
-                    var config = JSON.parse(configFile);
-                    var a = { "userId": senderID, "context": "location" }
-                    config.splice(_.indexOf(config, _.find(config, function(a) { console.log('Deleted ' + JSON.stringify(a)) })), 1);
-                    var configJSON = JSON.stringify(config);
-                    fs.writeFileSync('./app/location.json', configJSON)
-                    return location;
+              console.log(result)
+              return sendLoginButton(senderID)
+                .then(function() {
+                  var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
+                  var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
+                  return fbTemplate.reply(message, senderID)
                 })
             })
+        }
+      })
+  }
+
+  var showMyCalendar = function(senderID) {
+    var qr1 = fbTemplate.createQuickReply('Today', constants.TODAY)
+    var qr2 = fbTemplate.createQuickReply('Tomorrow', constants.TOMORROW)
+    var qr4 = fbTemplate.createQuickReply('This Weekend', constants.THIS_WEEKEND)
+    var qr3 = fbTemplate.createQuickReply('Next 7 Days', constants.NEXT_7_DAYS)
+    var qr5 = fbTemplate.createQuickReply('Next 30 Days', constants.NEXT_30_DAYS)
+    var qr6 = fbTemplate.createQuickReply('Back to Menu', constants.BACK_TO_MENU)
+    var message = fbTemplate.quickReplyMessage('You want to see events for ', [qr1, qr2, qr4, qr3, qr5, qr6])
+    return fbTemplate.reply(message, senderID)
+  }
+
+  var getCalendarEvents = function(senderID, maxDate, minDate) {
+    externalApi.getProfileWebsite(senderID, maxDate, minDate)
+      .then(function(result) {
+        var data = JSON.parse(result).data.timers
+        var length = parseInt(data.length)
+        var elements = []
+        if (length !== 0) {
+          for (var i = 0; i < length; i++) {
+            var lat = data[i].latitude
+            var long = data[i].longitude
+            var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id + '-' + lat + '-' + long)
+            var btn2 = fbTemplate.createShareButton()
+            var btn = [btn1, btn2];
+            var date;
+            var time;
+            var datetimestamp = new Date(data[i].time * 1000)
+            var fullDate = datetimestamp.toDateString().split(' ')
+            var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
+            var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
+            var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
+            hours = hours < 10 ? "0" + hours : hours;
+            var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
+            // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
+            time = hours + ":" + minutes + " " + am_pm;
+            var link = data[i].link;
+            var res = link.split('.');
+            elements[i] = fbTemplate.createElement(data[i].name + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + res[0] + '_medium.jpg', btn)
+          }
+          var message = fbTemplate.genericMessage(elements)
+          return fbTemplate.reply(message, senderID)
+        } else {
+          var message = fbTemplate.textMessage('You have no events for this date.')
+          console.log(message)
+          return fbTemplate.reply(message, senderID)
+        }
+      })
+      .then(function() {
+        showMyCalendar(senderID)
+      })
+  }
+
+  var getCalendarEventsForToday = function(senderID) {
+    var date = new Date();
+    var min = new Date(date.setHours(0, 0, 0, 0));
+    var max = new Date(date.setHours(23, 59, 59));
+    var maxDate = (+new Date(max) / 1000)
+    var minDate = (+new Date(min) / 1000)
+    return getCalendarEvents(senderID, maxDate, minDate)
+  }
+
+  var getCalendarEventsForTomorrow = function(senderID) {
+    var today = new Date();
+    var tomorrow = new Date();
+    // var d = tomorrow
+    // d.setDate(d.getDate() + 1);
+    tomorrow.setDate(today.getDate() + 1);
+    console.log(tomorrow.getDate());
+    var min = new Date(tomorrow.setHours(0, 0, 0, 0));
+    var max = new Date(tomorrow.setHours(23, 59, 59));
+    console.log(min, max)
+    var maxDate = (+new Date(max) / 1000)
+    var minDate = (+new Date(min) / 1000)
+    return getCalendarEvents(senderID, maxDate, minDate)
+  }
+
+  function getSundayOfCurrentWeek(d) {
+    var day = d.getDay();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + (day == 0 ? 0 : 7) - day);
+  }
+
+  var getCalendarEventsForThisWeekend = function(senderID) {
+    var d = new Date();
+    var startDay = d.getDay()
+    if (startDay == 5 || startDay == 6 || startDay == 0) {
+      var start = +new Date(d)
+    } else {
+      var e = new Date(new Date(d).setHours(0, 0, 0, 0));
+      var start = +new Date(e.setDate(e.getDate() + (12 - e.getDay()) % 7))
     }
+    var end = +new Date(getSundayOfCurrentWeek(d)).setHours(23, 59, 59)
+    var minDate = parseInt(start / 1000)
+    var maxDate = parseInt(end / 1000)
+    return getCalendarEvents(senderID, maxDate, minDate)
 
-    var promptCityConfirmationFromUser = function(text, senderID) {
-        return getCity(text)
-            .then(function(result) {
-                if (result != undefined) {
-                    var placeid = result.place_id
-                    var city = result.description;
-                    var qr1 = fbTemplate.createQuickReply('Yes', constants.YES_CONFIRMATION_FOR_CITY + '-' + placeid)
-                    var qr2 = fbTemplate.createQuickReply('No', constants.NO_CONFIRMATION_FOR_CITY)
-                    var message = fbTemplate.quickReplyMessage('Did you mean ' + city + ' ?', [qr1, qr2])
-                    return fbTemplate.reply(message, senderID)
-                } else {
-                    var message = fbTemplate.textMessage('Sorry. I could not understand your query. ')
-                    return fbTemplate.reply(message, senderID)
-                        .then(function() {
-                            promptUserForInputLocation(senderID)
-                        })
-                }
-            })
-    }
+  }
+  var getCalendarEventsForNext7Days = function(senderID) {
+    var d = new Date();
+    var e = d;
+    var start = +new Date(d);
+    var end = +new Date(e.setDate(e.getDate() + 6)).setHours(23, 59, 59);
+    var minDate = parseInt(start / 1000)
+    var maxDate = parseInt(end / 1000)
+    return getCalendarEvents(senderID, maxDate, minDate)
 
-    var getEventsByLocation = function(lat, long, offset, senderID) {
-        var senderID = parseInt(senderID)
-        console.log(senderID)
-        console.log(lat)
-        console.log(long)
-        console.log(offset)
-        return externalApi.getEventsByLocation(lat, long, offset)
-            .then(function(result) {
-                // console.log(result)
-                var body = JSON.parse(result)
-                var data = body.data.nearby;
-                if (data.length <= 0) {
-                    console.log('No result')
-                    var message = fbTemplate.textMessage('Sorry. There are no events near your location.')
-                        // console.log(message)
-                    return fbTemplate.reply(message, senderID)
-                        .then(function() {
-                            whereToCheckEvents(senderID)
-                        })
-                } else {
+  }
+  var getCalendarEventsForNext30Days = function(senderID) {
+    var d = new Date();
+    var e = d;
+    var start = +new Date(d);
+    var end = +new Date(e.setDate(e.getDate() + 29)).setHours(23, 59, 59);
+    var minDate = parseInt(start / 1000)
+    var maxDate = parseInt(end / 1000)
+    return getCalendarEvents(senderID, maxDate, minDate)
 
-                    var offset = body.data.offset
-                    console.log(offset)
-                    var btn = [];
-                    var elements = [];
-                    for (var i = 0; i <= data.length; i++) {
-                        if (i < data.length) {
-                            var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id + '-' + lat + '-' + long)
-                            var btn2 = fbTemplate.createShareButton()
-                            var btn = [btn1, btn2];
-                            var date;
-                            var time;
-                            var datetimestamp = new Date(data[i].time * 1000)
-                            var fullDate = datetimestamp.toDateString().split(' ')
-                            var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
-                            var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
-                            var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
-                            hours = hours < 10 ? "0" + hours : hours;
-                            var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
-                            // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
-                            time = hours + ":" + minutes + " " + am_pm;
-                            var link = data[i].link;
-                            console.log(link)
+  }
+  var sendLoginButton = function(senderID) {
+    var otherCity = fbTemplate.createAccountLinkingButton('https://timenotelogin.herokuapp.com/')
+    var message = fbTemplate.buttonMessage('Click on login button for logging into your TimeNote account', [otherCity])
+    return fbTemplate.reply(message, senderID)
+  }
 
-                            var res = link.split('.');
-                            elements[i] = fbTemplate.createElement(data[i].name + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + res[0] + '_medium.jpg', btn)
+  var promptForLogin = function(senderID) {
+    var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
+    var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
+    var message = fbTemplate.quickReplyMessage('So, what do you wanna do ?', [qr1, qr2])
+    return fbTemplate.reply(message, senderID)
+  }
 
-                        } else {
-                            var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + '-' + offset + '-' + lat + '-' + long)
-                            elements[i] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
-                        }
-                    }
+  var whereToCheckEvents = function(senderID) {
+    var nearBy = fbTemplate.createPostBackButton('NEARBY ME', constants.NEARBY_ME)
+    var otherCity = fbTemplate.createPostBackButton('ANOTHER CITY', constants.ANOTHER_CITY)
+      // var otherCity = fbTemplate.createWebViewButton('https://timenotebot.herokuapp.com?user=' + senderID, 'ANOTHER CITY', 'tall')
+    var message = fbTemplate.buttonMessage('Discover events in the city of your choice', [nearBy, otherCity])
+    return fbTemplate.reply(message, senderID)
+  }
 
-                    var message = fbTemplate.genericMessage(elements)
-                    return fbTemplate.reply(message, senderID)
-                }
-            })
+  var whereToCheckEventsAfterLogin = function(senderID) {
+    var nearBy = fbTemplate.createPostBackButton('NEARBY ME', constants.NEARBY_ME)
+    var otherCity = fbTemplate.createPostBackButton('ANOTHER CITY', constants.ANOTHER_CITY)
+    var myCalendar = fbTemplate.createPostBackButton('MY CALENDAR', constants.MY_CALENDAR)
+    var message = fbTemplate.buttonMessage('Discover events in the city of your choice', [nearBy, otherCity, myCalendar])
+    return fbTemplate.reply(message, senderID)
+  }
+
+  var promptUserForInputLocation = function(senderID) {
+
+    var message = fbTemplate.textMessage('Write the city you want.')
+    return fbTemplate.reply(message, senderID)
+  }
+
+  var promptUserForLocation = function(senderID) {
+    var message = fbTemplate.locationMessage()
+    return fbTemplate.reply(message, senderID)
+  }
+
+  var getCity = function(city) {
+    return externalApi.getCity(city)
+      .then(function(result) {
+        return result;
+      }, function(error) {
+        console.log('Error in getting City ' + error)
+      })
+  }
+
+  var getCityGeometry = function(placeid, senderID) {
+    return externalApi.getCityGeometry(placeid)
+      .then(function(result) {
+        return result;
+      }, function(error) {
+        console.log('Error in getting placeid ' + error)
+      })
+      .then(function(location) {
+        console.log(location)
+        getEventsByLocation(location.lat, location.lng, 0, senderID)
+
+        .then(function(result) {
+          console.log('inside')
+          var location = result
+          var configFile = fs.readFileSync('./app/location.json');
+          var config = JSON.parse(configFile);
+          var a = { "userId": senderID, "context": "location" }
+          config.splice(_.indexOf(config, _.find(config, function(a) { console.log('Deleted ' + JSON.stringify(a)) })), 1);
+          var configJSON = JSON.stringify(config);
+          fs.writeFileSync('./app/location.json', configJSON)
+          return location;
+        })
+      })
+  }
+
+  var promptCityConfirmationFromUser = function(text, senderID) {
+    return getCity(text)
+      .then(function(result) {
+        if (result != undefined) {
+          var placeid = result.place_id
+          var city = result.description;
+          var qr1 = fbTemplate.createQuickReply('Yes', constants.YES_CONFIRMATION_FOR_CITY + '-' + placeid)
+          var qr2 = fbTemplate.createQuickReply('No', constants.NO_CONFIRMATION_FOR_CITY)
+          var message = fbTemplate.quickReplyMessage('Did you mean ' + city + ' ?', [qr1, qr2])
+          return fbTemplate.reply(message, senderID)
+        } else {
+          var message = fbTemplate.textMessage('Sorry. I could not understand your query. ')
+          return fbTemplate.reply(message, senderID)
             .then(function() {
-                var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
-                var qr2 = fbTemplate.createQuickReply('Go Back', constants.GO_BACK)
-                var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
-                var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr1, qr3])
-                return fbTemplate.reply(message, senderID)
+              promptUserForInputLocation(senderID)
             })
+        }
+      })
+  }
 
-    }
+  var getEventsByLocation = function(lat, long, offset, senderID) {
+    var senderID = parseInt(senderID)
+      // console.log('senderID '+senderID)
+      // console.log('lat '+lat)
+      // console.log('long '+long)
+      // console.log('offset '+offset)
+    return externalApi.getEventsByLocation(lat, long, offset, senderID)
+      .then(function(result) {
+        // console.log(result)
+        var body = JSON.parse(result)
+        var data = body.data.nearby;
+        var more = body.data.more
+        if (data.length <= 0) {
+          console.log('No result')
+          var message = fbTemplate.textMessage('Sorry. There are no events near your location.')
+            // console.log(message)
+          return fbTemplate.reply(message, senderID)
+            .then(function() {
+              whereToCheckEvents(senderID)
+            })
+        } else {
 
+          var offset = body.data.offset
+          var btn = [];
+          var elements = [];
+          for (var i = 0; i <= data.length; i++) {
+            if (i < data.length) {
+              var is_saved = data[i].is_saved
+              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id + '-' + lat + '-' + long)
+              var btn2 = fbTemplate.createShareButton()
+              if (is_saved === 0 || is_saved == 0 || is_saved == '0') {
+                var btn3 = fbTemplate.createPostBackButton('SAVE', constants.SAVE_EVENT + '-' + data[i].id + '-' + data[i].latitude + '-' + data[i].longitude)
+                var btn = [btn1, btn3, btn2];
+              } else {
+                var btn = [btn1, btn2];
+              }
+              var date;
+              var time;
+              var datetimestamp = new Date(data[i].time * 1000)
+              var fullDate = datetimestamp.toDateString().split(' ')
+              var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
+              var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
+              var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
+              hours = hours < 10 ? "0" + hours : hours;
+              var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
+              // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
+              time = hours + ":" + minutes + " " + am_pm;
+              var link = data[i].link;
+              var res = link.split('.');
+              elements[i] = fbTemplate.createElement(data[i].name + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + res[0] + '_medium.jpg', btn)
+            }
+            //
+            else {
+              if (more === true) {
+                var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + '-' + offset + '-' + lat + '-' + long)
+                elements[i] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
+              } else {}
+            }
+          }
 
-    var options = function(senderID) {
+          var message = fbTemplate.genericMessage(elements)
+          return fbTemplate.reply(message, senderID)
+        }
+      })
+      .then(function() {
         var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
         var qr2 = fbTemplate.createQuickReply('Go Back', constants.GO_BACK)
-        // var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
-        var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr1])
+        var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
+        var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr1, qr3])
         return fbTemplate.reply(message, senderID)
-    }
-    var getEventsByUserLocation = function(lat, long, offset, address, senderID) {
-        var message = fbTemplate.textMessage('Your selected location is set to:\n ' + address)
-        return fbTemplate.reply(message, senderID)
-            .then(function() {
-                getEventsByLocation(lat, long, offset, senderID)
-            })
-    }
+      })
+  }
 
-    var getMoreEvents = function(lat, long, offset, senderID) {
+  var options = function(senderID) {
+    var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
+    var qr2 = fbTemplate.createQuickReply('Go Back', constants.GO_BACK)
+      // var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
+    var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr1])
+    return fbTemplate.reply(message, senderID)
+  }
+  var getEventsByUserLocation = function(lat, long, offset, address, senderID) {
+    var message = fbTemplate.textMessage('Your selected location is set to:\n ' + address)
+    return fbTemplate.reply(message, senderID)
+      .then(function() {
         getEventsByLocation(lat, long, offset, senderID)
-    }
+      })
+  }
 
-    var getEventById = function(id, lat, long, offset, senderID) {
-        console.log(lat)
-        console.log(long)
-        console.log(offset)
+  var getMoreEvents = function(lat, long, offset, senderID) {
+    getEventsByLocation(lat, long, offset, senderID)
+  }
 
-        return externalApi.getEventById(id)
-            .then(function(result) {
-                console.log(result)
-                var body = JSON.parse(result).data.timer
-                var timer = body.time
-                var date;
-                var time;
-                var datetimestamp = new Date(timer * 1000)
-                var fullDate = datetimestamp.toDateString().split(' ')
-                var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
-                var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
-                var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
-                hours = hours < 10 ? "0" + hours : hours;
-                var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
-                // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
-                time = hours + ":" + minutes + " " + am_pm;
-                console.log(date)
-                console.log(time)
-                var link = body.link
-                var res = link.split('.');
-                console.log(baseUrl + res[0])
-                var message = fbTemplate.ImageMessage(baseUrl + res[0] + '_large.jpg')
-                return fbTemplate.reply(message, senderID)
-                    .then(function() {
-                        var message = fbTemplate.textMessage(body.name + '\n\n📅  ' + date + '\n\n⌚  ' + time + '\n\n🏁  ' + body.location_infos_uni)
-                        return fbTemplate.reply(message, senderID)
-                    })
-                    .then(function() {
-                        var description = body.description
-                        var length = description.length
-                        var desc = description.substr(0, 640)
-                        var message = fbTemplate.textMessage(desc)
-                        return fbTemplate.reply(message, senderID)
-
-                    })
-                    .then(function() {
-                        return downloadLink(senderID)
-                    })
-                    .then(function() {
-                        var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
-                        var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
-                        var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
-                        var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
-                        return fbTemplate.reply(message, senderID)
-                    })
-            })
-    }
-
-    function downloadLink(senderID) {
-        var button1 = fbTemplate.createWebUrlButton('Get Android App', 'https://play.google.com/store/apps/details?id=timenote.timenote')
-        var button2 = fbTemplate.createWebUrlButton('Get iOS App', 'https://appsto.re/il/aICV5.i')
-        var message = fbTemplate.buttonMessage('For more details you can download our app from below links. ', [button1, button2])
+  var getEventById = function(id, lat, long, offset, senderID) {
+    return externalApi.getEventById(id, senderID)
+      .then(function(result) {
+        console.log(result)
+        var result = JSON.parse(result).data
+        var body = result.timer
+          // var lat = body.latitude
+          // var long = body.longitude
+          // var body = JSON.parse(result).data.timer
+        var timer = body.time
+        var isLoggedIn = result.is_logged
+        console.log(isLoggedIn)
+        var is_saved = body.is_saved
+        console.log(is_saved)
+        var date;
+        var time;
+        var datetimestamp = new Date(timer * 1000)
+        var fullDate = datetimestamp.toDateString().split(' ')
+        var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
+        var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
+        var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
+        hours = hours < 10 ? "0" + hours : hours;
+        var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
+        // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
+        time = hours + ":" + minutes + " " + am_pm;
+        // console.log(date)
+        // console.log(time)
+        var link = body.link
+        var res = link.split('.');
+        // console.log(baseUrl + res[0])
+        var message = fbTemplate.ImageMessage(baseUrl + res[0] + '_large.jpg')
         return fbTemplate.reply(message, senderID)
+          .then(function() {
+            var message = fbTemplate.textMessage(body.name + '\n\n📅  ' + date + '\n\n⌚  ' + time + '\n\n🏁  ' + body.location_infos_uni)
+            return fbTemplate.reply(message, senderID)
+          })
+          .then(function() {
+            var description = body.description
+            var length = description.length
+            var desc = description.substr(0, 640)
+            var message = fbTemplate.textMessage(desc)
+            return fbTemplate.reply(message, senderID)
+
+          })
+          .then(function() {
+            return downloadLink(senderID)
+          })
+          .then(function() {
+            console.log(isLoggedIn)
+            console.log(lat)
+            console.log(long)
+
+            if (isLoggedIn === '1' || isLoggedIn === 1) {
+              console.log(true)
+              var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
+              var qr1 = fbTemplate.createQuickReply('My TimeLine', constants.MY_CALENDAR)
+              if (is_saved === '1' || is_saved === 1) {
+                var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr0, qr1])
+              } else {
+                var qr2 = fbTemplate.createQuickReply('Save', constants.SAVE_EVENT + '-' + lat + '-' + long)
+                var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
+              }
+
+            } else {
+              console.log(false)
+              var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
+                // var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
+              var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
+              var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0])
+            }
+            return fbTemplate.reply(message, senderID)
+
+          })
+      })
+  }
+
+  function downloadLink(senderID) {
+    var button1 = fbTemplate.createWebUrlButton('Get Android App', 'https://play.google.com/store/apps/details?id=timenote.timenote')
+    var button2 = fbTemplate.createWebUrlButton('Get iOS App', 'https://appsto.re/il/aICV5.i')
+    var message = fbTemplate.buttonMessage('For more details you can download our app from below links. ', [button1, button2])
+    return fbTemplate.reply(message, senderID)
+  }
+
+  function Substr(str, size, senderID) {
+    var numChunks = Math.ceil(str.length / size),
+      chunks = new Array(numChunks);
+
+    for (var i = 0, o = 0; i < numChunks; ++i, o += size) {
+      chunks[i] = str.substr(o, size);
+      // console.log(chunks[i] + '\n\n')
+      // var message = fbTemplate.textMessage(chunks[i])
     }
+    return chunks
+  }
 
-    function Substr(str, size, senderID) {
-        var numChunks = Math.ceil(str.length / size),
-            chunks = new Array(numChunks);
+  function sorryMsg(senderID) {
+    var message = fbTemplate.textMessage("Sorry, I could't understand you. Here's what you can do with TimeNote Bot. ")
+    return fbTemplate.reply(message, senderID)
+      .then(function() {
+        promptForLogin(senderID)
+      })
+  }
 
-        for (var i = 0, o = 0; i < numChunks; ++i, o += size) {
-            chunks[i] = str.substr(o, size);
-            // console.log(chunks[i] + '\n\n')
-            // var message = fbTemplate.textMessage(chunks[i])
-        }
-        return chunks
-    }
-
-    function sorryMsg(senderID) {
-        var message = fbTemplate.textMessage("Sorry, I could't understand you. Here's what you can do with TimeNote Bot. ")
-        return fbTemplate.reply(message, senderID)
-            .then(function() {
-                promptForLogin(senderID)
-            })
-    }
-
-    return {
-        welcome: welcome,
-        whereToCheckEvents: whereToCheckEvents,
-        promptUserForLocation: promptUserForLocation,
-        promptUserForInputLocation: promptUserForInputLocation,
-        getEventsByLocation: getEventsByLocation,
-        getMoreEvents: getMoreEvents,
-        getEventsByUserLocation: getEventsByUserLocation,
-        promptCityConfirmationFromUser: promptCityConfirmationFromUser,
-        getEventById: getEventById,
-        getCityGeometry: getCityGeometry,
-        getCity: getCity,
-        promptForLogin: promptForLogin,
-        downloadLink: downloadLink,
-        options: options,
-        sorryMsg: sorryMsg
-    };
+  return {
+    welcome: welcome,
+    whereToCheckEvents: whereToCheckEvents,
+    promptUserForLocation: promptUserForLocation,
+    promptUserForInputLocation: promptUserForInputLocation,
+    getEventsByLocation: getEventsByLocation,
+    getMoreEvents: getMoreEvents,
+    getEventsByUserLocation: getEventsByUserLocation,
+    promptCityConfirmationFromUser: promptCityConfirmationFromUser,
+    getEventById: getEventById,
+    getCityGeometry: getCityGeometry,
+    getCity: getCity,
+    saveEvent: saveEvent,
+    promptForLogin: promptForLogin,
+    afterLogin: afterLogin,
+    sendLoginButton: sendLoginButton,
+    downloadLink: downloadLink,
+    options: options,
+    showMyCalendar: showMyCalendar,
+    getCalendarEventsForTomorrow: getCalendarEventsForTomorrow,
+    getCalendarEventsForToday: getCalendarEventsForToday,
+    getCalendarEventsForThisWeekend: getCalendarEventsForThisWeekend,
+    getCalendarEventsForNext7Days: getCalendarEventsForNext7Days,
+    getCalendarEventsForNext30Days: getCalendarEventsForNext30Days,
+    whereToCheckEventsAfterLogin: whereToCheckEventsAfterLogin,
+    sorryMsg: sorryMsg
+  };
 }

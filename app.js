@@ -14,6 +14,7 @@ const
   configuration = require('./app/configuration'),
   routes = require('./app/messengerApi'),
   messenger = require('./app/messenger'),
+  moment = require('moment'),
   app = express();
 
 

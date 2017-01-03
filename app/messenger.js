@@ -3,7 +3,9 @@ var configuration = require('./configuration'),
   crypto = require('crypto'),
   foo = require('./implementation'),
   implement = foo(),
+  externalApi = require('./api'),
   Handler = require("./Handler"),
+  constants = require("./payload"),
   json = require('./location.json'),
   _ = require("underscore"),
   fs = require('fs');
@@ -116,18 +118,17 @@ function receivedMessage(event) {
     //   implement.welcome(senderID);
     // } else {
 
-      const context = "location";
-      var configFile = fs.readFileSync('./app/location.json');
-      var config = JSON.parse(configFile);
-      var text = messageText.toString()
-      console.log(text)
+    const context = "location";
+    var configFile = fs.readFileSync('./app/location.json');
+    var config = JSON.parse(configFile);
+    var text = messageText.toString()
+    console.log(text)
 
-      var isLocationContext = _.where(config, { 'userId': senderID, 'context': 'location' }).length
-      if (isLocationContext > 0) {
-        implement.promptCityConfirmationFromUser(text, senderID)
+    var isLocationContext = _.where(config, { 'userId': senderID, 'context': 'location' }).length
+    if (isLocationContext > 0) {
+      implement.promptCityConfirmationFromUser(text, senderID)
 
-    }
-    else {
+    } else {
       implement.sorryMsg(senderID)
     }
 
@@ -220,8 +221,11 @@ function receivedAccountLink(event) {
 
   var status = event.account_linking.status;
   var authCode = event.account_linking.authorization_code;
-
   console.log("Received account link event with for user %d with status %s and auth code %s ", senderID, status, authCode);
+  if (status == "linked") {
+    var payload = constants.AFTER_LOGIN
+    Handler.HandlePayload(payload, senderID)
+  }
 }
 
 
