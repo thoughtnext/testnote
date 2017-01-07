@@ -56,6 +56,7 @@ function call() {
       return deferred.promise;
     },
     this.getAddress = function(lat, lng) {
+      console.log(lat, lng)
       var deferred = Q.defer();
       var options = {
         method: 'GET',
@@ -192,6 +193,32 @@ function call() {
           // console.log(body)
           // console.log(JSON.parse(body.data))
           var result = JSON.parse(body)
+          deferred.resolve(result)
+        }
+      });
+      return deferred.promise;
+    }
+    this.checkLoginStatus = function(user_fb_id) {
+      var deferred = Q.defer();
+      var options = {
+        method: 'POST',
+        url: 'https://api.gotimenote.com/user/is_logged_chatbot',
+        headers: {
+          'content-type': 'multipart/form-data'
+        },
+        formData: { data: '{"user_fb_id":"' + user_fb_id + '"}' }
+      };
+      console.log(options.url)
+      console.log(options.formData)
+      request(options, function(error, response, body) {
+        if (error) {
+          deferred.reject(error);
+
+        } else {
+          // console.log(body.data)
+          // console.log(JSON.parse(body.data))
+          var result = JSON.parse(body).data.is_logged
+          // console.log(result.data.is_logged)
           deferred.resolve(result)
         }
       });

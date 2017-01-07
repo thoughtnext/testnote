@@ -7,8 +7,20 @@ var constants = require("./payload"),
 
 function HandlePayload(payload, senderID) {
   console.log('[Handler.js] payload == ' + payload)
-
-  if (payload == constants.LOGIN) {
+  if (typeof(payload) === 'object') {
+    if (payload.lat != undefined) {
+      console.log('getEventsByUserLocation')
+      var lat = payload.lat
+      var long = payload.long
+      console.log(lat, long)
+      externalApi.getAddress(lat, long)
+        .then(function(result) {
+          var body = JSON.parse(result)
+          var address = body.results[2].formatted_address
+          implement.getEventsByUserLocation(lat, long, 0, address, senderID)
+        })
+    }
+  } else if (payload == constants.LOGIN) {
     implement.sendLoginButton(senderID)
   }
   // 
@@ -31,7 +43,7 @@ function HandlePayload(payload, senderID) {
     var event_id = temp[1]
     var lat = temp[2]
     var long = temp[3]
-    implement.saveEvent(senderID, event_id,lat, long)
+    implement.saveEvent(senderID, event_id, lat, long)
   }
   //
   else if (payload == constants.TOMORROW) {
@@ -51,7 +63,7 @@ function HandlePayload(payload, senderID) {
   }
   //  
   else if (payload == constants.BACK_TO_MENU) {
-    implement.whereToCheckEventsAfterLogin(senderID)
+    implement.whereToCheckEvents(senderID)
   }
   //
   else if (payload == constants.EXPLORE_WITHOUT_LOGIN) {
@@ -80,32 +92,21 @@ function HandlePayload(payload, senderID) {
       .then(function() {
         return context.addContext(obj)
       })
-
   }
   //
   else if (payload == constants.MORE_FEATURES) {
 
     implement.downloadLink(senderID)
       .then(function() {
-        implement.options(senderID)
+        implement.lastOptions(senderID)
       })
   }
   //
-  else if (payload.coordinates != undefined) {
-    console.log('getEventsByUserLocation')
-    var lat = payload.coordinates.lat
-    var long = payload.coordinates.long
-    externalApi.getAddress(lat, long).then(function(result) {
-      var body = JSON.parse(result)
-      var address = body.results[2].formatted_address
-      implement.getEventsByUserLocation(lat, long, 0, address, senderID)
-    })
-  }
+
 
   //
   else if (payload.indexOf(constants.MORE) != -1) {
     console.log('getMoreEvents')
-
     var str = payload.split("-");
     var offset = str[1]
     var lat = str[2]
@@ -120,8 +121,8 @@ function HandlePayload(payload, senderID) {
     var id = str[1];
     var lat = str[2];
     var lng = str[3]
-    // console.log(payload)
-    // console.log(str)
+      // console.log(payload)
+      // console.log(str)
       // var lat = str[2]
     var offset = 0;
     // console.log(id + ' ' + lat + ' ' + lng)
@@ -152,11 +153,11 @@ function HandlePayload(payload, senderID) {
     var index = payload.indexOf("-");
     var str = payload
     var placeid = str.substring(index + 1);
+    console.log(placeid)
     implement.getCityGeometry(placeid, senderID)
   }
   //
   else if (payload.indexOf(constants.NO_CONFIRMATION_FOR_CITY) != -1) {
-
     implement.promptUserForInputLocation(senderID)
   }
   //

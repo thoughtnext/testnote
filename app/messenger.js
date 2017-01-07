@@ -133,12 +133,17 @@ function receivedMessage(event) {
     }
 
   } else if (messageAttachments) {
-    var attachmentType = messageAttachments[0].type
     var attachmentPayload = messageAttachments[0].payload
-      // console.log(attachmentPayload)
-    if (attachmentType == 'location') {
-      // console.log(attachmentPayload.coordinates)
-      Handler.HandlePayload(attachmentPayload, senderID)
+    console.log('\n')
+    var attachmentType = messageAttachments[0].type
+    if (attachmentType === 'location') {
+      if (attachmentPayload.coordinates.lat !== undefined) {
+        // console.log(typeof(attachmentPayload))
+        if (typeof(attachmentPayload) === 'object') {
+          console.log(attachmentPayload)
+          Handler.HandlePayload(attachmentPayload.coordinates, senderID)
+        }
+      }
     }
     // var message = fbTemplate.textMessage('Message with attachment received')
     // return fbTemplate.reply(message, senderID)
@@ -228,8 +233,6 @@ function receivedAccountLink(event) {
   }
 }
 
-
-// export { verifyRequestSignature };
 exports.verifyRequestSignature = verifyRequestSignature;
 exports.receivedAuthentication = receivedAuthentication;
 exports.receivedMessage = receivedMessage;

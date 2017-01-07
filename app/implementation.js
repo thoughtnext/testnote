@@ -14,20 +14,35 @@ module.exports = function() {
   var baseUrl = 'http://api.gotimenote.com/'
 
   var welcome = function(senderID) {
-    externalApi.getUserProfile(senderID)
-      .then(function(user) {
-        var profile = JSON.parse(user)
-        var name = profile.first_name
-        return externalApi.checkBotUsers(name, senderID)
-      })
-      .then(function(result) {
-        console.log(result)
-        return sendLoginButton(senderID)
-          .then(function() {
-            var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
-            var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
-            return fbTemplate.reply(message, senderID)
-          })
+    return checkLoginStatus(senderID)
+      .then(function(islogged) {
+        console.log('[imp.js - 19] ' + islogged)
+        if (islogged === '0' || islogged === null) {
+          console.log('not logged in')
+          externalApi.getUserProfile(senderID)
+            .then(function(user) {
+              var profile = JSON.parse(user)
+              var name = profile.first_name
+              return externalApi.checkBotUsers(name, senderID)
+            })
+            .then(function(result) {
+              console.log(result)
+              return sendLoginButton(senderID)
+            })
+            .then(function() {
+              var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
+              var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
+              return fbTemplate.reply(message, senderID)
+            })
+
+        } else {
+          console.log('logged in')
+          var message = fbTemplate.textMessage('You are already logged in')
+          return fbTemplate.reply(message, senderID)
+            .then(function() {
+              return whereToCheckEvents(senderID)
+            })
+        }
       })
   }
 
@@ -42,27 +57,25 @@ module.exports = function() {
         return fbTemplate.reply(message, senderID)
           .then(function() {
             console.log("Congrats")
-            return whereToCheckEventsAfterLogin(senderID)
+            return whereToCheckEvents(senderID)
           })
       })
   }
 
   var saveEvent = function(senderID, event_id, lat, long) {
-    externalApi.saveEvent(senderID, event_id, lat, long)
+    return externalApi.saveEvent(senderID, event_id, lat, long)
       .then(function(result) {
         console.log(result)
         if (result.success == 'true') {
           var message = fbTemplate.textMessage('This event has been successfully saved to your timeline.')
           fbTemplate.reply(message, senderID)
             .then(function() {
-              // console.log('hihiiihihhi')
               var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
               var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
               var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
               var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
               return fbTemplate.reply(message, senderID)
             })
-
         } else {
           var message = fbTemplate.textMessage('Please login first to save this event')
           fbTemplate.reply(message, senderID)
@@ -78,7 +91,14 @@ module.exports = function() {
         }
       })
   }
-
+  var checkLoginStatus = function(senderID) {
+    return externalApi.checkLoginStatus(senderID)
+      .then(function(result) {
+        return result;
+      }, function(error) {
+        console.error('Error fetching login status for this user : ' + senderID)
+      })
+  }
   var showMyCalendar = function(senderID) {
     var qr1 = fbTemplate.createQuickReply('Today', constants.TODAY)
     var qr2 = fbTemplate.createQuickReply('Tomorrow', constants.TOMORROW)
@@ -143,8 +163,6 @@ module.exports = function() {
   var getCalendarEventsForTomorrow = function(senderID) {
     var today = new Date();
     var tomorrow = new Date();
-    // var d = tomorrow
-    // d.setDate(d.getDate() + 1);
     tomorrow.setDate(today.getDate() + 1);
     console.log(tomorrow.getDate());
     var min = new Date(tomorrow.setHours(0, 0, 0, 0));
@@ -173,8 +191,8 @@ module.exports = function() {
     var minDate = parseInt(start / 1000)
     var maxDate = parseInt(end / 1000)
     return getCalendarEvents(senderID, maxDate, minDate)
-
   }
+
   var getCalendarEventsForNext7Days = function(senderID) {
     var d = new Date();
     var e = d;
@@ -183,8 +201,8 @@ module.exports = function() {
     var minDate = parseInt(start / 1000)
     var maxDate = parseInt(end / 1000)
     return getCalendarEvents(senderID, maxDate, minDate)
-
   }
+
   var getCalendarEventsForNext30Days = function(senderID) {
     var d = new Date();
     var e = d;
@@ -193,12 +211,24 @@ module.exports = function() {
     var minDate = parseInt(start / 1000)
     var maxDate = parseInt(end / 1000)
     return getCalendarEvents(senderID, maxDate, minDate)
-
   }
+
   var sendLoginButton = function(senderID) {
-    var otherCity = fbTemplate.createAccountLinkingButton('https://timenotelogin.herokuapp.com/')
-    var message = fbTemplate.buttonMessage('Click on login button for logging into your TimeNote account', [otherCity])
-    return fbTemplate.reply(message, senderID)
+    return checkLoginStatus(senderID)
+      .then(function(islogged) {
+        console.log('[imp.js - 19] ' + islogged)
+        if (islogged === '0' || islogged === null) {
+          var otherCity = fbTemplate.createAccountLinkingButton('https://timenotelogin.herokuapp.com/')
+          var message = fbTemplate.buttonMessage('Click on login button for logging into your TimeNote account', [otherCity])
+          return fbTemplate.reply(message, senderID)
+        } else {
+          var message = fbTemplate.textMessage('You are already logged in to  your TimeNote account')
+          return fbTemplate.reply(message, senderID)
+            .then(function() {
+              return whereToCheckEvents(senderID)
+            })
+        }
+      })
   }
 
   var promptForLogin = function(senderID) {
@@ -209,23 +239,29 @@ module.exports = function() {
   }
 
   var whereToCheckEvents = function(senderID) {
-    var nearBy = fbTemplate.createPostBackButton('NEARBY ME', constants.NEARBY_ME)
-    var otherCity = fbTemplate.createPostBackButton('ANOTHER CITY', constants.ANOTHER_CITY)
-      // var otherCity = fbTemplate.createWebViewButton('https://timenotebot.herokuapp.com?user=' + senderID, 'ANOTHER CITY', 'tall')
-    var message = fbTemplate.buttonMessage('Discover events in the city of your choice', [nearBy, otherCity])
-    return fbTemplate.reply(message, senderID)
-  }
-
-  var whereToCheckEventsAfterLogin = function(senderID) {
-    var nearBy = fbTemplate.createPostBackButton('NEARBY ME', constants.NEARBY_ME)
-    var otherCity = fbTemplate.createPostBackButton('ANOTHER CITY', constants.ANOTHER_CITY)
-    var myCalendar = fbTemplate.createPostBackButton('MY CALENDAR', constants.MY_CALENDAR)
-    var message = fbTemplate.buttonMessage('Discover events in the city of your choice', [nearBy, otherCity, myCalendar])
-    return fbTemplate.reply(message, senderID)
+    return checkLoginStatus(senderID)
+      .then(function(islogged) {
+        console.log('[imp.js - 19] ' + islogged)
+        if (islogged === '0' || islogged === null) {
+          console.log('not logged in')
+          var nearBy = fbTemplate.createPostBackButton('NEARBY ME', constants.NEARBY_ME)
+          var otherCity = fbTemplate.createPostBackButton('ANOTHER CITY', constants.ANOTHER_CITY)
+          var message = fbTemplate.buttonMessage('Discover events in the city of your choice', [nearBy, otherCity])
+          return fbTemplate.reply(message, senderID)
+        }
+        //
+        else {
+          console.log('logged in')
+          var nearBy = fbTemplate.createPostBackButton('NEARBY ME', constants.NEARBY_ME)
+          var otherCity = fbTemplate.createPostBackButton('ANOTHER CITY', constants.ANOTHER_CITY)
+          var myCalendar = fbTemplate.createPostBackButton('MY CALENDAR', constants.MY_CALENDAR)
+          var message = fbTemplate.buttonMessage('Discover events in the city of your choice', [nearBy, otherCity, myCalendar])
+          return fbTemplate.reply(message, senderID)
+        }
+      })
   }
 
   var promptUserForInputLocation = function(senderID) {
-
     var message = fbTemplate.textMessage('Write the city you want.')
     return fbTemplate.reply(message, senderID)
   }
@@ -245,6 +281,7 @@ module.exports = function() {
   }
 
   var getCityGeometry = function(placeid, senderID) {
+    console.log(placeid)
     return externalApi.getCityGeometry(placeid)
       .then(function(result) {
         return result;
@@ -254,18 +291,17 @@ module.exports = function() {
       .then(function(location) {
         console.log(location)
         getEventsByLocation(location.lat, location.lng, 0, senderID)
-
-        .then(function(result) {
-          console.log('inside')
-          var location = result
-          var configFile = fs.readFileSync('./app/location.json');
-          var config = JSON.parse(configFile);
-          var a = { "userId": senderID, "context": "location" }
-          config.splice(_.indexOf(config, _.find(config, function(a) { console.log('Deleted ' + JSON.stringify(a)) })), 1);
-          var configJSON = JSON.stringify(config);
-          fs.writeFileSync('./app/location.json', configJSON)
-          return location;
-        })
+          .then(function(result) {
+            console.log('inside')
+            var location = result
+            var configFile = fs.readFileSync('./app/location.json');
+            var config = JSON.parse(configFile);
+            var a = { "userId": senderID, "context": "location" }
+            config.splice(_.indexOf(config, _.find(config, function(a) { console.log('Deleted ' + JSON.stringify(a)) })), 1);
+            var configJSON = JSON.stringify(config);
+            fs.writeFileSync('./app/location.json', configJSON)
+            return location;
+          })
       })
   }
 
@@ -291,10 +327,6 @@ module.exports = function() {
 
   var getEventsByLocation = function(lat, long, offset, senderID) {
     var senderID = parseInt(senderID)
-      // console.log('senderID '+senderID)
-      // console.log('lat '+lat)
-      // console.log('long '+long)
-      // console.log('offset '+offset)
     return externalApi.getEventsByLocation(lat, long, offset, senderID)
       .then(function(result) {
         // console.log(result)
@@ -304,13 +336,14 @@ module.exports = function() {
         if (data.length <= 0) {
           console.log('No result')
           var message = fbTemplate.textMessage('Sorry. There are no events near your location.')
-            // console.log(message)
           return fbTemplate.reply(message, senderID)
             .then(function() {
-              whereToCheckEvents(senderID)
+              return whereToCheckEvents(senderID)
+            })
+            .then(function() {
+              return lastOptions(senderID)
             })
         } else {
-
           var offset = body.data.offset
           var btn = [];
           var elements = [];
@@ -348,23 +381,40 @@ module.exports = function() {
               } else {}
             }
           }
-
           var message = fbTemplate.genericMessage(elements)
           return fbTemplate.reply(message, senderID)
+            .then(function() {
+              return lastOptions(senderID)
+            })
         }
       })
-      .then(function() {
-        var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
-        var qr2 = fbTemplate.createQuickReply('Go Back', constants.GO_BACK)
-        var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
-        var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr1, qr3])
-        return fbTemplate.reply(message, senderID)
+  }
+
+  var lastOptions = function(senderID) {
+    return checkLoginStatus(senderID)
+      .then(function(islogged) {
+        console.log('[imp.js - 19] ' + islogged)
+        if (islogged === '0' || islogged === null) {
+          console.log('not logged in')
+          var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
+          var qr2 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
+          var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
+          var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr3])
+          return fbTemplate.reply(message, senderID)
+        } else {
+          var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
+          var qr2 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
+          var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
+          var qr4 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
+          var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr4, qr3])
+          return fbTemplate.reply(message, senderID)
+        }
       })
   }
 
   var options = function(senderID) {
     var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
-    var qr2 = fbTemplate.createQuickReply('Go Back', constants.GO_BACK)
+    var qr2 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
       // var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
     var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr1])
     return fbTemplate.reply(message, senderID)
@@ -387,9 +437,6 @@ module.exports = function() {
         console.log(result)
         var result = JSON.parse(result).data
         var body = result.timer
-          // var lat = body.latitude
-          // var long = body.longitude
-          // var body = JSON.parse(result).data.timer
         var timer = body.time
         var isLoggedIn = result.is_logged
         console.log(isLoggedIn)
@@ -406,11 +453,8 @@ module.exports = function() {
         var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
         // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
         time = hours + ":" + minutes + " " + am_pm;
-        // console.log(date)
-        // console.log(time)
         var link = body.link
         var res = link.split('.');
-        // console.log(baseUrl + res[0])
         var message = fbTemplate.ImageMessage(baseUrl + res[0] + '_large.jpg')
         return fbTemplate.reply(message, senderID)
           .then(function() {
@@ -432,18 +476,21 @@ module.exports = function() {
             console.log(isLoggedIn)
             console.log(lat)
             console.log(long)
-
-            if (isLoggedIn === '1' || isLoggedIn === 1) {
+            return checkLoginStatus(senderID)
+          })
+          .then(function(islogged) {
+            console.log('[imp.js - 19] ' + islogged)
+            if (islogged === '0' || islogged === null) {
+              console.log('not logged in')
               console.log(true)
               var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
-              var qr1 = fbTemplate.createQuickReply('My TimeLine', constants.MY_CALENDAR)
+              var qr1 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
               if (is_saved === '1' || is_saved === 1) {
                 var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr0, qr1])
               } else {
-                var qr2 = fbTemplate.createQuickReply('Save', constants.SAVE_EVENT + '-' + lat + '-' + long)
+                var qr2 = fbTemplate.createQuickReply('Save', constants.SAVE_EVENT + '-' + id + '-' + lat + '-' + long)
                 var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
               }
-
             } else {
               console.log(false)
               var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
@@ -452,7 +499,6 @@ module.exports = function() {
               var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0])
             }
             return fbTemplate.reply(message, senderID)
-
           })
       })
   }
@@ -467,11 +513,8 @@ module.exports = function() {
   function Substr(str, size, senderID) {
     var numChunks = Math.ceil(str.length / size),
       chunks = new Array(numChunks);
-
     for (var i = 0, o = 0; i < numChunks; ++i, o += size) {
       chunks[i] = str.substr(o, size);
-      // console.log(chunks[i] + '\n\n')
-      // var message = fbTemplate.textMessage(chunks[i])
     }
     return chunks
   }
@@ -508,7 +551,7 @@ module.exports = function() {
     getCalendarEventsForThisWeekend: getCalendarEventsForThisWeekend,
     getCalendarEventsForNext7Days: getCalendarEventsForNext7Days,
     getCalendarEventsForNext30Days: getCalendarEventsForNext30Days,
-    whereToCheckEventsAfterLogin: whereToCheckEventsAfterLogin,
+    lastOptions: lastOptions,
     sorryMsg: sorryMsg
   };
 }
