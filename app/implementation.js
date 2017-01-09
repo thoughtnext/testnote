@@ -71,7 +71,7 @@ module.exports = function() {
           fbTemplate.reply(message, senderID)
             .then(function() {
               var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
-              var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
+              var qr1 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
               var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
               var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
               return fbTemplate.reply(message, senderID)
@@ -101,14 +101,31 @@ module.exports = function() {
   }
   var showMyCalendar = function(senderID) {
     var qr1 = fbTemplate.createQuickReply('Today', constants.TODAY)
-    var qr2 = fbTemplate.createQuickReply('Tomorrow', constants.TOMORROW)
-    var qr4 = fbTemplate.createQuickReply('This Weekend', constants.THIS_WEEKEND)
-    var qr3 = fbTemplate.createQuickReply('Next 7 Days', constants.NEXT_7_DAYS)
+      // var qr2 = fbTemplate.createQuickReply('Tomorrow', constants.TOMORROW)
+    var qr2 = fbTemplate.createQuickReply('This Week', constants.THIS_WEEK)
+
+    // var qr4 = fbTemplate.createQuickReply('This Weekend', constants.THIS_WEEKEND)
+    // var qr3 = fbTemplate.createQuickReply('Next 7 Days', constants.NEXT_7_DAYS)
     var qr5 = fbTemplate.createQuickReply('Next 30 Days', constants.NEXT_30_DAYS)
     var qr6 = fbTemplate.createQuickReply('Back to Menu', constants.BACK_TO_MENU)
-    var message = fbTemplate.quickReplyMessage('You want to see events for ', [qr1, qr2, qr4, qr3, qr5, qr6])
+    var message = fbTemplate.quickReplyMessage('You want to see events for ', [qr1, qr2, qr5, qr6])
     return fbTemplate.reply(message, senderID)
   }
+  var showMyCalendarInPersistentMenu = function(senderID) {
+    return checkLoginStatus(senderID)
+      .then(function(islogged) {
+        console.log('[imp.js - 19] ' + islogged)
+        if (islogged === '0' || islogged === null) {
+          console.log('not logged in')
+          var otherCity = fbTemplate.createAccountLinkingButton('https://timenotelogin.herokuapp.com/')
+          var message = fbTemplate.buttonMessage('Click on login button for logging into your TimeNote account', [otherCity])
+          return fbTemplate.reply(message, senderID)
+        } else {
+          showMyCalendar(senderID)
+        }
+      })
+  }
+
 
   var getCalendarEvents = function(senderID, maxDate, minDate) {
     externalApi.getProfileWebsite(senderID, maxDate, minDate)
@@ -117,27 +134,56 @@ module.exports = function() {
         var length = parseInt(data.length)
         var elements = []
         if (length !== 0) {
-          for (var i = 0; i < length; i++) {
-            var lat = data[i].latitude
-            var long = data[i].longitude
-            var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id + '-' + lat + '-' + long)
-            var btn2 = fbTemplate.createShareButton()
-            var btn = [btn1, btn2];
-            var date;
-            var time;
-            var datetimestamp = new Date(data[i].time * 1000)
-            var fullDate = datetimestamp.toDateString().split(' ')
-            var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
-            var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
-            var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
-            hours = hours < 10 ? "0" + hours : hours;
-            var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
-            // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
-            time = hours + ":" + minutes + " " + am_pm;
-            var link = data[i].link;
-            var res = link.split('.');
-            elements[i] = fbTemplate.createElement(data[i].name + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + res[0] + '_medium.jpg', btn)
+          console.log(length)
+          if (length <= 9) {
+            for (var i = 0; i < length; i++) {
+              var lat = data[i].latitude
+              var long = data[i].longitude
+              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id + '-' + lat + '-' + long)
+              var btn2 = fbTemplate.createShareButton()
+              var btn = [btn1, btn2];
+              var date;
+              var time;
+              var datetimestamp = new Date(data[i].time * 1000)
+              var fullDate = datetimestamp.toDateString().split(' ')
+              var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
+              var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
+              var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
+              hours = hours < 10 ? "0" + hours : hours;
+              var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
+              // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
+              time = hours + ":" + minutes + " " + am_pm;
+              var link = data[i].link;
+              var res = link.split('.');
+              elements[i] = fbTemplate.createElement(data[i].name + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + res[0] + '_medium.jpg', btn)
+            }
+          } else if (length > 9) {
+            for (var i = 0; i < 9; i++) {
+              var lat = data[i].latitude
+              var long = data[i].longitude
+              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id + '-' + lat + '-' + long)
+              var btn2 = fbTemplate.createShareButton()
+              var btn = [btn1, btn2];
+              var date;
+              var time;
+              var datetimestamp = new Date(data[i].time * 1000)
+              var fullDate = datetimestamp.toDateString().split(' ')
+              var date = fullDate[2] + ' ' + fullDate[1] + ' ' + fullDate[3];
+              var hours = datetimestamp.getHours() > 12 ? datetimestamp.getHours() - 12 : datetimestamp.getHours();
+              var am_pm = datetimestamp.getHours() >= 12 ? "PM" : "AM";
+              hours = hours < 10 ? "0" + hours : hours;
+              var minutes = datetimestamp.getMinutes() < 10 ? "0" + datetimestamp.getMinutes() : datetimestamp.getMinutes();
+              // var seconds = datetimestamp.getSeconds() < 10 ? "0" + datetimestamp.getSeconds() : datetimestamp.getSeconds();
+              time = hours + ":" + minutes + " " + am_pm;
+              var link = data[i].link;
+              var res = link.split('.');
+              elements[i] = fbTemplate.createElement(data[i].name + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + res[0] + '_medium.jpg', btn)
+            }
+            var minDate = parseInt(data[8].time) + 1
+            var btn = fbTemplate.createPostBackButton('More Events', constants.MORE_EVENTS + '-' + maxDate + '-' + minDate)
+            elements[9] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
           }
+
           var message = fbTemplate.genericMessage(elements)
           return fbTemplate.reply(message, senderID)
         } else {
@@ -178,6 +224,11 @@ module.exports = function() {
     return new Date(d.getFullYear(), d.getMonth(), d.getDate() + (day == 0 ? 0 : 7) - day);
   }
 
+  function getSaturdayOfCurrentWeek(d) {
+    var day = d.getDay();
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() + (day == 0 ? -1 : 6) - day);
+  }
+
   var getCalendarEventsForThisWeekend = function(senderID) {
     var d = new Date();
     var startDay = d.getDay()
@@ -188,6 +239,21 @@ module.exports = function() {
       var start = +new Date(e.setDate(e.getDate() + (12 - e.getDay()) % 7))
     }
     var end = +new Date(getSundayOfCurrentWeek(d)).setHours(23, 59, 59)
+    var minDate = parseInt(start / 1000)
+    var maxDate = parseInt(end / 1000)
+    return getCalendarEvents(senderID, maxDate, minDate)
+  }
+
+  var getCalendarEventsForThisWeek = function(senderID) {
+    var d = new Date();
+    var startDay = d.getDay()
+    if (startDay == 5 || startDay == 6 || startDay == 0) {
+      var start = +new Date(d)
+    } else {
+      var e = new Date(new Date(d).setHours(0, 0, 0, 0));
+      var start = +new Date(e.setDate(e.getDate() + (12 - e.getDay()) % 7))
+    }
+    var end = +new Date(getSaturdayOfCurrentWeek(d)).setHours(23, 59, 59)
     var minDate = parseInt(start / 1000)
     var maxDate = parseInt(end / 1000)
     return getCalendarEvents(senderID, maxDate, minDate)
@@ -406,7 +472,7 @@ module.exports = function() {
           var qr2 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
           var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
           var qr4 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
-          var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr4, qr3])
+          var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr4])
           return fbTemplate.reply(message, senderID)
         }
       })
@@ -548,9 +614,12 @@ module.exports = function() {
     showMyCalendar: showMyCalendar,
     getCalendarEventsForTomorrow: getCalendarEventsForTomorrow,
     getCalendarEventsForToday: getCalendarEventsForToday,
+    getCalendarEventsForThisWeek: getCalendarEventsForThisWeek,
     getCalendarEventsForThisWeekend: getCalendarEventsForThisWeekend,
     getCalendarEventsForNext7Days: getCalendarEventsForNext7Days,
     getCalendarEventsForNext30Days: getCalendarEventsForNext30Days,
+    getCalendarEvents: getCalendarEvents,
+    showMyCalendarInPersistentMenu: showMyCalendarInPersistentMenu,
     lastOptions: lastOptions,
     sorryMsg: sorryMsg
   };

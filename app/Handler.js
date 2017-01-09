@@ -53,6 +53,10 @@ function HandlePayload(payload, senderID) {
   else if (payload == constants.THIS_WEEKEND) {
     implement.getCalendarEventsForThisWeekend(senderID)
   }
+    //
+  else if (payload == constants.THIS_WEEK) {
+    implement.getCalendarEventsForThisWeek(senderID)
+  }
   //
   else if (payload == constants.NEXT_7_DAYS) {
     implement.getCalendarEventsForNext7Days(senderID)
@@ -103,9 +107,19 @@ function HandlePayload(payload, senderID) {
   }
   //
 
-
+  else if(payload == constants.MYCALENDAR_IN_PERSISTENTMENU){
+    implement.showMyCalendarInPersistentMenu(senderID)
+  }
   //
-  else if (payload.indexOf(constants.MORE) != -1) {
+  else if (payload.indexOf(constants.MORE_EVENTS) != -1) {
+    console.log('getMoreEvents')
+    var str = payload.split("-");
+    var maxDate = str[1]
+    var minDate = str[2]
+    // var long = str[3]
+    implement.getCalendarEvents(senderID, maxDate, minDate)
+  } 
+ else if (payload.indexOf(constants.MORE) != -1) {
     console.log('getMoreEvents')
     var str = payload.split("-");
     var offset = str[1]
