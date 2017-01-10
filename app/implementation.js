@@ -297,7 +297,7 @@ module.exports = function() {
       var e = new Date(new Date(d).setHours(0, 0, 0, 0));
       var start = +new Date(e.setDate(e.getDate() + (12 - e.getDay()) % 7))
     }
-    var end = +new Date(getSaturdayOfCurrentWeek(d)).setHours(23, 59, 59)
+    var end = +new Date(getSundayOfCurrentWeek(d)).setHours(23, 59, 59)
     var minDate = parseInt(start / 1000)
     var maxDate = parseInt(end / 1000)
     return getCalendarEvents(senderID, maxDate, minDate)
