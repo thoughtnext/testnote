@@ -111,9 +111,12 @@ module.exports = function() {
     var message = fbTemplate.quickReplyMessage('You want to see events for ', [qr1, qr2, qr5, qr6])
     return fbTemplate.reply(message, senderID)
   }
+
   var showMyCalendarInPersistentMenu = function(senderID) {
+    console.log('hi')
     return checkLoginStatus(senderID)
       .then(function(islogged) {
+        console.log(islogged)
         console.log('[imp.js - 19] ' + islogged)
         if (islogged === '0' || islogged === null) {
           console.log('not logged in')
@@ -125,7 +128,6 @@ module.exports = function() {
         }
       })
   }
-
 
   var getCalendarEvents = function(senderID, maxDate, minDate) {
     externalApi.getProfileWebsite(senderID, maxDate, minDate)
@@ -589,7 +591,7 @@ module.exports = function() {
     var message = fbTemplate.textMessage("Sorry, I could't understand you. Here's what you can do with TimeNote Bot. ")
     return fbTemplate.reply(message, senderID)
       .then(function() {
-        promptForLogin(senderID)
+        whereToCheckEvents(senderID)
       })
   }
 
