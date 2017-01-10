@@ -31,6 +31,8 @@ define("NEXT_WEEK", "NEXT_WEEK");
 define("NEXT_7_DAYS", "NEXT_7_DAYS");
 define("NEXT_30_DAYS", "NEXT_30_DAYS");
 define("MYCALENDAR_IN_PERSISTENTMENU", "MYCALENDAR_IN_PERSISTENTMENU");
+define("YES_LOGOUT", "YES_LOGOUT");
+define("NO_LOGOUT", "NO_LOGOUT");
 
     
 // constants.DETAILS

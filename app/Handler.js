@@ -22,6 +22,10 @@ function HandlePayload(payload, senderID) {
     }
   } else if (payload == constants.LOGIN) {
     implement.sendLoginButton(senderID)
+  } else if (payload == constants.YES_LOGOUT) {
+    implement.Logout(senderID)
+  } else if (payload == constants.NO_LOGOUT) {
+    implement.whereToCheckEvents(senderID)
   }
   // 
   else if (payload == constants.GET_STARTED) {
@@ -53,7 +57,7 @@ function HandlePayload(payload, senderID) {
   else if (payload == constants.THIS_WEEKEND) {
     implement.getCalendarEventsForThisWeekend(senderID)
   }
-    //
+  //
   else if (payload == constants.THIS_WEEK) {
     implement.getCalendarEventsForThisWeek(senderID)
   }
@@ -106,8 +110,7 @@ function HandlePayload(payload, senderID) {
       })
   }
   //
-
-  else if(payload == constants.MYCALENDAR_IN_PERSISTENTMENU){
+  else if (payload == constants.MYCALENDAR_IN_PERSISTENTMENU) {
     implement.showMyCalendarInPersistentMenu(senderID)
   }
   //
@@ -116,10 +119,9 @@ function HandlePayload(payload, senderID) {
     var str = payload.split("-");
     var maxDate = str[1]
     var minDate = str[2]
-    // var long = str[3]
+      // var long = str[3]
     implement.getCalendarEvents(senderID, maxDate, minDate)
-  } 
- else if (payload.indexOf(constants.MORE) != -1) {
+  } else if (payload.indexOf(constants.MORE) != -1) {
     console.log('getMoreEvents')
     var str = payload.split("-");
     var offset = str[1]

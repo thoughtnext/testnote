@@ -1,4 +1,4 @@
-'use strict';
+// 'use strict';
 
 var fbTemplate = require('./fbTemplate'),
   constants = require("./payload"),
@@ -46,6 +46,28 @@ module.exports = function() {
       })
   }
 
+  var greetUser = function(senderID) {
+    return externalApi.getUserProfile(senderID)
+      .then(function(user) {
+        var profile = JSON.parse(user)
+        var name = profile.first_name
+        var message = fbTemplate.textMessage('Hi ' + name + '.\nTimeNote bot allows you to explore any city in the world as a city guide. ')
+        return fbTemplate.reply(message, senderID)
+      })
+      .then(function() {
+        return whereToCheckEvents(senderID)
+      })
+  }
+  var sayGoodBye = function(senderID) {
+    return externalApi.getUserProfile(senderID)
+      .then(function(user) {
+        var profile = JSON.parse(user)
+        var name = profile.first_name
+        var message = fbTemplate.textMessage('See you soon ' + name + '.\nDo remember you can always type HI or HELLO to start the conversation again.')
+        return fbTemplate.reply(message, senderID)
+      })
+  }
+
   var afterLogin = function(senderID) {
     externalApi.getUserProfile(senderID)
       .then(function(user) {
@@ -67,13 +89,13 @@ module.exports = function() {
       .then(function(result) {
         console.log(result)
         if (result.success == 'true') {
-          var message = fbTemplate.textMessage('This event has been successfully saved to your timeline.')
+          var message = fbTemplate.textMessage('Cool! This event has been saved to your calendar now.')
           fbTemplate.reply(message, senderID)
             .then(function() {
-              var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
+              var qr0 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
               var qr1 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
-              var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
-              var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
+                // var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
+              var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr1, qr2])
               return fbTemplate.reply(message, senderID)
             })
         } else {
@@ -99,13 +121,33 @@ module.exports = function() {
         console.error('Error fetching login status for this user : ' + senderID)
       })
   }
+  var Logout = function(senderID) {
+    return externalApi.checkLoginStatus(senderID)
+      .then(function(islogged) {
+        if (islogged === '0' || islogged === null) {
+          console.log('not logged in')
+          var message = fbTemplate.textMessage('You were already logged out')
+          fbTemplate.reply(message, senderID)
+        } else {
+          return externalApi.Logout(senderID)
+            .then(function(result) {
+              if (result) {
+                var message = fbTemplate.textMessage('You have successfully logged out of your TimeNote account')
+                fbTemplate.reply(message, senderID)
+              }
+            })
+        }
+      })
+      .then(function() {
+        return whereToCheckEvents(senderID)
+      })
+  }
   var showMyCalendar = function(senderID) {
     var qr1 = fbTemplate.createQuickReply('Today', constants.TODAY)
       // var qr2 = fbTemplate.createQuickReply('Tomorrow', constants.TOMORROW)
     var qr2 = fbTemplate.createQuickReply('This Week', constants.THIS_WEEK)
-
-    // var qr4 = fbTemplate.createQuickReply('This Weekend', constants.THIS_WEEKEND)
-    // var qr3 = fbTemplate.createQuickReply('Next 7 Days', constants.NEXT_7_DAYS)
+      // var qr4 = fbTemplate.createQuickReply('This Weekend', constants.THIS_WEEKEND)
+      // var qr3 = fbTemplate.createQuickReply('Next 7 Days', constants.NEXT_7_DAYS)
     var qr5 = fbTemplate.createQuickReply('Next 30 Days', constants.NEXT_30_DAYS)
     var qr6 = fbTemplate.createQuickReply('Back to Menu', constants.BACK_TO_MENU)
     var message = fbTemplate.quickReplyMessage('You want to see events for ', [qr1, qr2, qr5, qr6])
@@ -121,7 +163,7 @@ module.exports = function() {
         if (islogged === '0' || islogged === null) {
           console.log('not logged in')
           var otherCity = fbTemplate.createAccountLinkingButton('https://timenotelogin.herokuapp.com/')
-          var message = fbTemplate.buttonMessage('Click on login button for logging into your TimeNote account', [otherCity])
+          var message = fbTemplate.buttonMessage('Click on login to log into your TimeNote account', [otherCity])
           return fbTemplate.reply(message, senderID)
         } else {
           showMyCalendar(senderID)
@@ -287,7 +329,7 @@ module.exports = function() {
         console.log('[imp.js - 19] ' + islogged)
         if (islogged === '0' || islogged === null) {
           var otherCity = fbTemplate.createAccountLinkingButton('https://timenotelogin.herokuapp.com/')
-          var message = fbTemplate.buttonMessage('Click on login button for logging into your TimeNote account', [otherCity])
+          var message = fbTemplate.buttonMessage('Click on login to log into your TimeNote account', [otherCity])
           return fbTemplate.reply(message, senderID)
         } else {
           var message = fbTemplate.textMessage('You are already logged in to  your TimeNote account')
@@ -359,17 +401,17 @@ module.exports = function() {
       .then(function(location) {
         console.log(location)
         getEventsByLocation(location.lat, location.lng, 0, senderID)
-          .then(function(result) {
-            console.log('inside')
-            var location = result
-            var configFile = fs.readFileSync('./app/location.json');
-            var config = JSON.parse(configFile);
-            var a = { "userId": senderID, "context": "location" }
-            config.splice(_.indexOf(config, _.find(config, function(a) { console.log('Deleted ' + JSON.stringify(a)) })), 1);
-            var configJSON = JSON.stringify(config);
-            fs.writeFileSync('./app/location.json', configJSON)
-            return location;
-          })
+          // .then(function(result) {
+          //   console.log('inside')
+          //   var location = result
+          //   var configFile = fs.readFileSync('./app/location.json');
+          //   var config = JSON.parse(configFile);
+          //   var a = { "userId": senderID, "context": "location" }
+          //   config.splice(_.indexOf(config, _.find(config, function(a) { console.log('Deleted ' + JSON.stringify(a)) })), 1);
+          //   var configJSON = JSON.stringify(config);
+          //   fs.writeFileSync('./app/location.json', configJSON)
+          //   return location;
+          // })
       })
   }
 
@@ -464,13 +506,14 @@ module.exports = function() {
         console.log('[imp.js - 19] ' + islogged)
         if (islogged === '0' || islogged === null) {
           console.log('not logged in')
-          var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
+          // var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
           var qr2 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
           var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
-          var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr3])
+          var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
+          var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr3, qr1])
           return fbTemplate.reply(message, senderID)
         } else {
-          var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
+          // var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
           var qr2 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
           var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
           var qr4 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
@@ -538,7 +581,14 @@ module.exports = function() {
 
           })
           .then(function() {
-            return downloadLink(senderID)
+            return checkLoginStatus(senderID)
+              .then(function(islogged) {
+                console.log('[imp.js - 19] ' + islogged)
+                if (islogged === '0' || islogged === null) {
+                  console.log('not logged in')
+                  return downloadLink(senderID)
+                } else {}
+              })
           })
           .then(function() {
             console.log(isLoggedIn)
@@ -549,22 +599,23 @@ module.exports = function() {
           .then(function(islogged) {
             console.log('[imp.js - 19] ' + islogged)
             if (islogged === '0' || islogged === null) {
-              console.log('not logged in')
-              console.log(true)
-              var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
-              var qr1 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
-              if (is_saved === '1' || is_saved === 1) {
-                var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr0, qr1])
-              } else {
-                var qr2 = fbTemplate.createQuickReply('Save', constants.SAVE_EVENT + '-' + id + '-' + lat + '-' + long)
-                var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
-              }
-            } else {
               console.log(false)
               var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
-                // var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
+                var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
               var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
-              var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0])
+              var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
+              console.log('not logged in')
+
+            } else {
+              console.log(true)
+              var qr0 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
+              var qr1 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
+              if (is_saved === '1' || is_saved === 1) {
+                var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr1, qr0])
+              } else {
+                var qr2 = fbTemplate.createQuickReply('Save this event', constants.SAVE_EVENT + '-' + id + '-' + lat + '-' + long)
+                var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr1, qr0])
+              }
             }
             return fbTemplate.reply(message, senderID)
           })
@@ -613,6 +664,7 @@ module.exports = function() {
     sendLoginButton: sendLoginButton,
     downloadLink: downloadLink,
     options: options,
+    Logout: Logout,
     showMyCalendar: showMyCalendar,
     getCalendarEventsForTomorrow: getCalendarEventsForTomorrow,
     getCalendarEventsForToday: getCalendarEventsForToday,
@@ -623,6 +675,8 @@ module.exports = function() {
     getCalendarEvents: getCalendarEvents,
     showMyCalendarInPersistentMenu: showMyCalendarInPersistentMenu,
     lastOptions: lastOptions,
+    greetUser: greetUser,
+    sayGoodBye: sayGoodBye,
     sorryMsg: sorryMsg
   };
 }

@@ -39,7 +39,7 @@ function call() {
         },
         formData: { data: '{"user_fb_id": "' + user_id + '","event_id" : "' + event_id + '" , "password" : "lechevalblanc"}' }
       };
-          console.log(options.formData)
+      console.log(options.formData)
 
 
       request(options, function(error, response, body) {
@@ -198,7 +198,7 @@ function call() {
       });
       return deferred.promise;
     }
-    this.checkLoginStatus = function(user_fb_id) {
+  this.checkLoginStatus = function(user_fb_id) {
       var deferred = Q.defer();
       var options = {
         method: 'POST',
@@ -218,7 +218,33 @@ function call() {
           // console.log(body.data)
           // console.log(JSON.parse(body.data))
           var result = JSON.parse(body).data.is_logged
-          // console.log(result.data.is_logged)
+            // console.log(result.data.is_logged)
+          deferred.resolve(result)
+        }
+      });
+      return deferred.promise;
+    },
+    this.Logout = function(user_fb_id) {
+      var deferred = Q.defer();
+      var options = {
+        method: 'POST',
+        url: 'http://api.gotimenote.com/user/logout_chatbot',
+        headers: {
+          'content-type': 'multipart/form-data'
+        },
+        formData: { data: '{"user_fb_id":"' + user_fb_id + '"}' }
+      };
+      console.log(options.url)
+      console.log(options.formData)
+      request(options, function(error, response, body) {
+        if (error) {
+          deferred.reject(error);
+
+        } else {
+          // console.log(body.data)
+          // console.log(JSON.parse(body.data))
+          var result = JSON.parse(body).success
+            // console.log(result.data.is_logged)
           deferred.resolve(result)
         }
       });

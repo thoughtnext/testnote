@@ -8,7 +8,9 @@ var configuration = require('./configuration'),
   constants = require("./payload"),
   json = require('./location.json'),
   _ = require("underscore"),
-  fs = require('fs');
+  fs = require('fs'),
+  Wit = require('node-wit').Wit;
+
 
 // ,
 // session = require("./wit").findOrCreateSession,
@@ -117,20 +119,40 @@ function receivedMessage(event) {
     //   messageText.toString().toUpperCase() == 'HI') {
     //   implement.welcome(senderID);
     // } else {
+    const sessionId = findOrCreateSession(senderID);
+    console.log('session id is ==' + sessionId)
 
-    const context = "location";
-    var configFile = fs.readFileSync('./app/location.json');
-    var config = JSON.parse(configFile);
-    var text = messageText.toString()
-    console.log(text)
+    const context0 = {};
+    client.runActions(sessionId, messageText, context0)
+      .then((context1) => {
+        console.log('The session state is now: === ' + JSON.stringify(context1));
+        // if (context1 == 'location') {
+        //   implement.sorryMsg(senderID);
+        // }
+        //return client.runActions(sessionId,messageText , context1);
+      })
+      .then((context2) => {
+        console.log('The session state is now: ' + JSON.stringify(context2));
+      })
 
-    var isLocationContext = _.where(config, { 'userId': senderID, 'context': 'location' }).length
-    if (isLocationContext > 0) {
-      implement.promptCityConfirmationFromUser(text, senderID)
+    .catch((e) => {
+      console.log('Oops! Got an error: ' + e);
+      implement.sorryMsg(senderID);
+    });
+    // const context = "location";
+    // var configFile = fs.readFileSync('./app/location.json');
+    // var config = JSON.parse(configFile);
+    // var text = messageText.toString()
+    // console.log(text)
 
-    } else {
-      implement.sorryMsg(senderID)
-    }
+    // var isLocationContext = _.where(config, { 'userId': senderID, 'context': 'location' }).length
+    // if (isLocationContext > 0) {
+    //   implement.promptCityConfirmationFromUser(text, senderID)
+
+    // } else {
+    //   implement.sorryMsg(senderID)
+    // }
+
 
   } else if (messageAttachments) {
     var attachmentPayload = messageAttachments[0].payload
@@ -149,6 +171,100 @@ function receivedMessage(event) {
     // return fbTemplate.reply(message, senderID)
   }
 }
+
+/*wit config*/
+
+const sessions = {};
+
+const findOrCreateSession = (fbid) => {
+  let sessionId;
+  // Let's see if we already have a session for the user fbid
+  Object.keys(sessions).forEach(k => {
+    if (sessions[k].fbid === fbid) {
+      // Yep, got it!
+      sessionId = k;
+    }
+  });
+  if (!sessionId) {
+    // No session found for user fbid, let's create a new one
+    sessionId = new Date().toISOString();
+    sessions[sessionId] = { fbid: fbid, context: {} };
+  }
+  return sessionId;
+};
+
+// Our bot actions
+const actions = {
+  send(request, response) {
+    return new Promise(function(resolve, reject) {
+      console.log(JSON.stringify(request.entities.intent[0].value))
+      console.log(JSON.stringify(response));
+      const recipientId = sessions[request.sessionId].fbid;
+      var text = response.text
+      var quick_reply = response.quickreplies
+      if (text && quick_reply) {
+        var en = request.entities.intent[0].value
+        console.log(text)
+        console.log(quick_reply)
+        if (en === 'logout') {
+          var qr = []
+          var i = 0;
+          for (i = 0; i < quick_reply.length; i++) {
+            qr[i] = fbTemplate.createQuickReply(quick_reply[i], quick_reply[i] + '_LOGOUT')
+          }
+          var message = fbTemplate.quickReplyMessage(text, qr)
+          fbTemplate.reply(message, recipientId)
+        }
+      }
+      if (text && !quick_reply) {
+        console.log(text)
+      }
+      return Promise.resolve();
+    });
+  },
+  GetLocation({ sessionId, context, entities }) {
+    const senderID = sessions[sessionId].fbid;
+    console.log('senderID is == ' + senderID);
+    if (senderID) {
+      var en = entities.location[0].value
+        // Yay, we found our recipient!
+        // Let's forward our bot response to her.
+        // We return a promise to let our bot know when we're done sending
+      console.log('context')
+      console.log(context)
+      console.log('entities')
+      console.log(en)
+      implement.promptCityConfirmationFromUser(en, senderID)
+
+    }
+  },
+  GreetUser({ sessionId, context, entities }) {
+    const senderID = sessions[sessionId].fbid;
+    console.log('senderID is == ' + senderID);
+    if (senderID) {
+      // var message = fbTemplate.textMessage('Hi User. TimeNote')
+      implement.greetUser(senderID)
+
+    }
+  },
+  sayGoodBye({ sessionId, context, entities }){
+    const senderID = sessions[sessionId].fbid;
+    console.log('senderID is == ' + senderID);
+    if (senderID) {
+      // var message = fbTemplate.textMessage('Hi User. TimeNote')
+      implement.sayGoodBye(senderID)
+
+    }
+  }
+};
+
+const client = new Wit({
+  accessToken: 'KEQCELLJWURLA7KXMUS5ACLEYBU6MIQX',
+  actions
+  // logger: new log.Logger(log.INFO)
+});
+
+
 
 /*
  * Delivery Confirmation Event
