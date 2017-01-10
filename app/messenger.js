@@ -1,3 +1,4 @@
+'use strict';
 var configuration = require('./configuration'),
   fbTemplate = require('./fbTemplate'),
   crypto = require('crypto'),
@@ -177,7 +178,7 @@ function receivedMessage(event) {
 const sessions = {};
 
 const findOrCreateSession = (fbid) => {
-  var sessionId;
+  let sessionId;
   // Let's see if we already have a session for the user fbid
   Object.keys(sessions).forEach(k => {
     if (sessions[k].fbid === fbid) {
