@@ -156,8 +156,8 @@ module.exports = function() {
       // var qr3 = fbTemplate.createQuickReply('Next 7 Days', constants.NEXT_7_DAYS)
     var qr5 = fbTemplate.createQuickReply('Next 30 Days', constants.NEXT_30_DAYS)
     var qr6 = fbTemplate.createQuickReply('Back to Menu', constants.BACK_TO_MENU)
-    var qr6 = fbTemplate.createQuickReply('View App', constants.VIEW_APP)
-    var message = fbTemplate.quickReplyMessage('You want to see events for ', [qr1, qr2, qr5, qr6])
+    var qr7 = fbTemplate.createQuickReply('View App', constants.VIEW_APP)
+    var message = fbTemplate.quickReplyMessage('You want to see events for ', [qr1, qr2, qr5, qr6, qr7])
     return fbTemplate.reply(message, senderID)
   }
 
