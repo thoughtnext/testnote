@@ -40,6 +40,14 @@ function HandlePayload(payload, senderID) {
     console.log('events for today')
     implement.getCalendarEventsForToday(senderID)
   }
+  else if(payload == constants.VIEW_APP){
+    console.log('VIEW_APP')
+    implement.viewApp(senderID)
+    // .then(function() {
+    //     // implement.lastOptions(senderID)
+    //     implement.
+    //   })
+  }
   //
   else if (payload.indexOf(constants.SAVE_EVENT) != -1) {
     console.log('events for SAVE_EVENT')

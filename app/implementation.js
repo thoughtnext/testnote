@@ -95,7 +95,7 @@ module.exports = function() {
               var qr0 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
               var qr1 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
                 // var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
-              var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr1, qr2])
+              var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr0, qr1])
               return fbTemplate.reply(message, senderID)
             })
         } else {
@@ -139,7 +139,13 @@ module.exports = function() {
         }
       })
       .then(function() {
-        return whereToCheckEvents(senderID)
+        return sendLoginButton(senderID)
+          // })
+          .then(function() {
+            var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
+            var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
+            return fbTemplate.reply(message, senderID)
+          })
       })
   }
   var showMyCalendar = function(senderID) {
@@ -150,6 +156,7 @@ module.exports = function() {
       // var qr3 = fbTemplate.createQuickReply('Next 7 Days', constants.NEXT_7_DAYS)
     var qr5 = fbTemplate.createQuickReply('Next 30 Days', constants.NEXT_30_DAYS)
     var qr6 = fbTemplate.createQuickReply('Back to Menu', constants.BACK_TO_MENU)
+    var qr6 = fbTemplate.createQuickReply('View App', constants.VIEW_APP)
     var message = fbTemplate.quickReplyMessage('You want to see events for ', [qr1, qr2, qr5, qr6])
     return fbTemplate.reply(message, senderID)
   }
@@ -401,17 +408,6 @@ module.exports = function() {
       .then(function(location) {
         console.log(location)
         getEventsByLocation(location.lat, location.lng, 0, senderID)
-          // .then(function(result) {
-          //   console.log('inside')
-          //   var location = result
-          //   var configFile = fs.readFileSync('./app/location.json');
-          //   var config = JSON.parse(configFile);
-          //   var a = { "userId": senderID, "context": "location" }
-          //   config.splice(_.indexOf(config, _.find(config, function(a) { console.log('Deleted ' + JSON.stringify(a)) })), 1);
-          //   var configJSON = JSON.stringify(config);
-          //   fs.writeFileSync('./app/location.json', configJSON)
-          //   return location;
-          // })
       })
   }
 
@@ -506,7 +502,7 @@ module.exports = function() {
         console.log('[imp.js - 19] ' + islogged)
         if (islogged === '0' || islogged === null) {
           console.log('not logged in')
-          // var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
+            // var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
           var qr2 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
           var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
           var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
@@ -515,9 +511,12 @@ module.exports = function() {
         } else {
           // var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
           var qr2 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
-          var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
+            // var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
+
           var qr4 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
-          var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr4])
+          var qr5 = fbTemplate.createQuickReply('View App', constants.VIEW_APP)
+
+          var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr4, qr5])
           return fbTemplate.reply(message, senderID)
         }
       })
@@ -601,7 +600,7 @@ module.exports = function() {
             if (islogged === '0' || islogged === null) {
               console.log(false)
               var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
-                var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
+              var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
               var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
               var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
               console.log('not logged in')
@@ -627,6 +626,20 @@ module.exports = function() {
     var button2 = fbTemplate.createWebUrlButton('Get iOS App', 'https://appsto.re/il/aICV5.i')
     var message = fbTemplate.buttonMessage('For more details you can download our app from below links. ', [button1, button2])
     return fbTemplate.reply(message, senderID)
+  }
+
+
+  function viewApp(senderID) {
+    var button1 = fbTemplate.createWebUrlButton('Android App', 'https://play.google.com/store/apps/details?id=timenote.timenote')
+    var button2 = fbTemplate.createWebUrlButton('iOS App', 'https://appsto.re/il/aICV5.i')
+    var message = fbTemplate.buttonMessage('You can view the app here', [button1, button2])
+    return fbTemplate.reply(message, senderID)
+      .then(function() {
+        var qr0 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
+        var qr1 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
+        var message = fbTemplate.quickReplyMessage('What\'s Next ?', [qr0, qr1])
+        return fbTemplate.reply(message, senderID)
+      })
   }
 
   function Substr(str, size, senderID) {
@@ -677,6 +690,7 @@ module.exports = function() {
     lastOptions: lastOptions,
     greetUser: greetUser,
     sayGoodBye: sayGoodBye,
+    viewApp: viewApp,
     sorryMsg: sorryMsg
   };
 }

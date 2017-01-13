@@ -90,7 +90,7 @@ function receivedMessage(event) {
   var message = event.message;
 
   console.log("\nReceived message for user %d and page %d at %d with message:", senderID, recipientID, timeOfMessage);
-  console.log(JSON.stringify(message));
+  // console.log(JSON.stringify(message));
 
   var isEcho = message.is_echo;
   var messageId = message.mid;
@@ -103,7 +103,7 @@ function receivedMessage(event) {
 
   if (isEcho) {
     // Just logging message echoes to console
-    console.log("\nReceived echo for message %s and app %d with metadata %s", messageId, appId, metadata);
+    // console.log("\nReceived echo for message %s and app %d with metadata %s", messageId, appId, metadata);
     return;
   } else if (quickReply) {
     var quickReplyPayload = quickReply.payload;
@@ -133,7 +133,7 @@ function receivedMessage(event) {
         //return client.runActions(sessionId,messageText , context1);
       })
       .then((context2) => {
-        console.log('The session state is now: ' + JSON.stringify(context2));
+        // console.log('The session state is now: ' + JSON.stringify(context2));
       })
 
     .catch((e) => {
