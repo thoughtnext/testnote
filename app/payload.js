@@ -33,6 +33,8 @@ define("NEXT_30_DAYS", "NEXT_30_DAYS");
 define("MYCALENDAR_IN_PERSISTENTMENU", "MYCALENDAR_IN_PERSISTENTMENU");
 define("YES_LOGOUT", "YES_LOGOUT");
 define("NO_LOGOUT", "NO_LOGOUT");
+define("YES_LOGIN", "YES_LOGIN");
+define("NO_LOGIN", "NO_LOGIN");
 define("VIEW_APP", "VIEW_APP");
 
     

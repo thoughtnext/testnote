@@ -27,9 +27,15 @@ function HandlePayload(payload, senderID) {
   } else if (payload == constants.NO_LOGOUT) {
     implement.whereToCheckEvents(senderID)
   }
+  //
+  else if (payload == constants.YES_LOGIN) {
+    implement.sendLoginButton(senderID)
+  } else if (payload == constants.NO_LOGIN) {
+    implement.whereToCheckEvents(senderID)
+  }
   // 
   else if (payload == constants.GET_STARTED) {
-    implement.welcome(senderID)
+    implement.get_started(senderID)
   }
   //
   else if (payload == constants.MY_CALENDAR) {

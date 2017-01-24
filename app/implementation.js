@@ -45,18 +45,60 @@ module.exports = function() {
         }
       })
   }
-
-  var greetUser = function(senderID) {
-    return externalApi.getUserProfile(senderID)
-      .then(function(user) {
-        var profile = JSON.parse(user)
-        var name = profile.first_name
-        var message = fbTemplate.textMessage('Hi ' + name + '.\nTimeNote bot allows you to explore any city in the world as a city guide. ')
+  var get_started = function(senderID) {
+    var text = fbTemplate.textMessage('Use the first social calendar "Timenote"')
+    return fbTemplate.reply(text, senderID)
+      .then(function() {
+        var qr0 = fbTemplate.createQuickReply('Yes', constants.YES_LOGIN)
+        var qr1 = fbTemplate.createQuickReply('No', constants.NO_LOGIN)
+          // var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
+        var message = fbTemplate.quickReplyMessage("Do you want to login ?", [qr0, qr1])
         return fbTemplate.reply(message, senderID)
       })
-      .then(function() {
-        return whereToCheckEvents(senderID)
-      })
+      // return checkLoginStatus(senderID)
+      //   .then(function(islogged) {
+      //     console.log('[imp.js - 19] ' + islogged)
+      //     if (islogged === '0' || islogged === null) {
+      //       console.log('not logged in')
+      //       externalApi.getUserProfile(senderID)
+      //         .then(function(user) {
+      //           var profile = JSON.parse(user)
+      //           var name = profile.first_name
+      //           return externalApi.checkBotUsers(name, senderID)
+      //         })
+      //         .then(function(result) {
+      //           console.log(result)
+      //           return sendLoginButton(senderID)
+      //         })
+      //         .then(function() {
+      //           var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
+      //           var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
+      //           return fbTemplate.reply(message, senderID)
+      //         })
+
+    //     } else {
+    //       console.log('logged in')
+    //       var message = fbTemplate.textMessage('You are already logged in')
+    //       return fbTemplate.reply(message, senderID)
+    //         .then(function() {
+    //           return whereToCheckEvents(senderID)
+    //         })
+    //     }
+    //   })
+  }
+
+  var greetUser = function(senderID) {
+    // return externalApi.getUserProfile(senderID)
+    //   .then(function(user) {
+    //     var profile = JSON.parse(user)
+    //     var name = profile.first_name
+    //     var message = fbTemplate.textMessage('Hi ' + name + '.\nTimeNote bot allows you to explore any city in the world as a city guide. ')
+    //     return fbTemplate.reply(message, senderID)
+    //   })
+    //   .then(function() {
+        return get_started(senderID)
+    //   })
+    
   }
   var sayGoodBye = function(senderID) {
     return externalApi.getUserProfile(senderID)
@@ -691,6 +733,7 @@ module.exports = function() {
     greetUser: greetUser,
     sayGoodBye: sayGoodBye,
     viewApp: viewApp,
+    get_started: get_started,
     sorryMsg: sorryMsg
   };
 }
