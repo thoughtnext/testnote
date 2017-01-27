@@ -29,11 +29,11 @@ module.exports = function() {
               console.log(result)
               return sendLoginButton(senderID)
             })
-            .then(function() {
-              var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
-              var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
-              return fbTemplate.reply(message, senderID)
-            })
+            // .then(function() {
+            //   var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
+            //   var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
+            //   return fbTemplate.reply(message, senderID)
+            // })
 
         } else {
           console.log('logged in')
@@ -69,11 +69,7 @@ module.exports = function() {
                   return fbTemplate.reply(message, senderID)
                 })
             })
-            // .then(function() {
-            //   var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
-            //   var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
-            //   return fbTemplate.reply(message, senderID)
-            // })
+
 
         } else {
           console.log('logged in')
@@ -145,11 +141,11 @@ module.exports = function() {
             .then(function(result) {
               console.log(result)
               return sendLoginButton(senderID)
-                .then(function() {
-                  var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
-                  var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
-                  return fbTemplate.reply(message, senderID)
-                })
+                // .then(function() {
+                //   var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
+                //   var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
+                //   return fbTemplate.reply(message, senderID)
+                // })
             })
         }
       })
@@ -181,12 +177,12 @@ module.exports = function() {
       })
       .then(function() {
         return sendLoginButton(senderID)
+          //   // })
+          //   .then(function() {
+          // var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
+          // var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
+          // return fbTemplate.reply(message, senderID)
           // })
-          .then(function() {
-            var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
-            var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
-            return fbTemplate.reply(message, senderID)
-          })
       })
   }
   var showMyCalendar = function(senderID) {
@@ -211,13 +207,15 @@ module.exports = function() {
         if (islogged === '0' || islogged === null) {
           console.log('not logged in')
           var otherCity = fbTemplate.createAccountLinkingButton('https://timenotelogin.herokuapp.com/')
-          var message = fbTemplate.buttonMessage('Click on login to log into your TimeNote account', [otherCity])
+          var message = fbTemplate.buttonMessage('Click on login to log into your Timenote account', [otherCity])
           return fbTemplate.reply(message, senderID)
         } else {
           showMyCalendar(senderID)
         }
       })
   }
+
+  // after
 
   var getCalendarEvents = function(senderID, maxDate, minDate) {
     externalApi.getProfileWebsite(senderID, maxDate, minDate)
@@ -379,6 +377,11 @@ module.exports = function() {
           var otherCity = fbTemplate.createAccountLinkingButton('https://timenotelogin.herokuapp.com/')
           var message = fbTemplate.buttonMessage('Click on login to log into your TimeNote account', [otherCity])
           return fbTemplate.reply(message, senderID)
+            .then(function() {
+              var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
+              var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
+              return fbTemplate.reply(message, senderID)
+            })
         } else {
           var message = fbTemplate.textMessage('You are already logged in to  your TimeNote account')
           return fbTemplate.reply(message, senderID)

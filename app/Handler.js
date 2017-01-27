@@ -22,6 +22,7 @@ function HandlePayload(payload, senderID) {
     }
   } else if (payload == constants.LOGIN) {
     implement.sendLoginButton(senderID)
+    
   } else if (payload == constants.YES_LOGOUT) {
     implement.Logout(senderID)
   } else if (payload == constants.NO_LOGOUT) {
@@ -176,7 +177,7 @@ function HandlePayload(payload, senderID) {
   }
   //
   else if (payload.indexOf(constants.RESTART) != -1) {
-    implement.welcome(senderID)
+    implement.get_started(senderID)
   }
   //
   else if (payload.indexOf(constants.YES_CONFIRMATION_FOR_CITY) != -1) {

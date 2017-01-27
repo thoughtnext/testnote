@@ -114,45 +114,48 @@ function receivedMessage(event) {
   }
 
   if (messageText) {
-    // const sessionId = session(senderID);
-    // if (messageText.toString().toUpperCase() == 'HEY' ||
-    //   messageText.toString().toUpperCase() == 'HELLO' ||
-    //   messageText.toString().toUpperCase() == 'HI') {
-    //   implement.welcome(senderID);
-    // } else {
-    const sessionId = findOrCreateSession(senderID);
-    console.log('session id is ==' + sessionId)
+    if (messageText.toString().toUpperCase() == 'NO' || messageText.toString().toUpperCase() == 'START' || messageText.toString().toUpperCase() == 'RESTART') {
+      implement.get_started(senderID)
 
-    const context0 = {};
-    client.runActions(sessionId, messageText, context0)
-      .then((context1) => {
-        console.log('The session state is now: === ' + JSON.stringify(context1));
-        // if (context1 == 'location') {
-        //   implement.sorryMsg(senderID);
-        // }
-        //return client.runActions(sessionId,messageText , context1);
-      })
-      .then((context2) => {
-        // console.log('The session state is now: ' + JSON.stringify(context2));
-      })
+      // const sessionId = session(senderID);
+      // if (messageText.toString().toUpperCase() == 'HEY' ||
+      //   messageText.toString().toUpperCase() == 'HELLO' ||
+      //   messageText.toString().toUpperCase() == 'HI') {
+      //   implement.welcome(senderID);
+    } else {
+      const sessionId = findOrCreateSession(senderID);
+      console.log('session id is ==' + sessionId)
 
-    .catch((e) => {
-      console.log('Oops! Got an error: ' + e);
-      implement.sorryMsg(senderID);
-    });
-    // const context = "location";
-    // var configFile = fs.readFileSync('./app/location.json');
-    // var config = JSON.parse(configFile);
-    // var text = messageText.toString()
-    // console.log(text)
+      const context0 = {};
+      client.runActions(sessionId, messageText, context0)
+        .then((context1) => {
+          console.log('The session state is now: === ' + JSON.stringify(context1));
+          // if (context1 == 'location') {
+          //   implement.sorryMsg(senderID);
+          // }
+          //return client.runActions(sessionId,messageText , context1);
+        })
+        .then((context2) => {
+          // console.log('The session state is now: ' + JSON.stringify(context2));
+        })
 
-    // var isLocationContext = _.where(config, { 'userId': senderID, 'context': 'location' }).length
-    // if (isLocationContext > 0) {
-    //   implement.promptCityConfirmationFromUser(text, senderID)
+      .catch((e) => {
+        console.log('Oops! Got an error: ' + e);
+        implement.sorryMsg(senderID);
+      });
+      // const context = "location";
+      // var configFile = fs.readFileSync('./app/location.json');
+      // var config = JSON.parse(configFile);
+      // var text = messageText.toString()
+      // console.log(text)
 
-    // } else {
-    //   implement.sorryMsg(senderID)
-    // }
+      // var isLocationContext = _.where(config, { 'userId': senderID, 'context': 'location' }).length
+      // if (isLocationContext > 0) {
+      //   implement.promptCityConfirmationFromUser(text, senderID)
+
+      // } else {
+      //   implement.sorryMsg(senderID)
+    }
 
 
   } else if (messageAttachments) {
@@ -248,7 +251,7 @@ const actions = {
 
     }
   },
-  sayGoodBye({ sessionId, context, entities }){
+  sayGoodBye({ sessionId, context, entities }) {
     const senderID = sessions[sessionId].fbid;
     console.log('senderID is == ' + senderID);
     if (senderID) {
