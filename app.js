@@ -31,7 +31,7 @@ const
 
 app.set('port', process.env.PORT || 5000);
 app.set('view engine', 'ejs');
-app.use(bodyParser.json({ verify: messenger.verifyRequestSignature }));
+app.use(bodyParser.json());
 app.use(express.static('public'));
 
 
