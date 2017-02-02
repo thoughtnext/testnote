@@ -17,7 +17,8 @@ function call() {
         formData: { data: '{"user_fb_id": "' + user_id + '","offset":"' + offset + '","latitude":"' + lat + '","longitude":"' + long + '"}' }
         // formData: { data: '{"offset":"' + offset + '","latitude":"' + 43.700000 + '","longitude":"' + 7.250000 + '"}' }
       };
-
+      console.log(options.url)
+      console.log(options.formData)
       request(options, function(error, response, body) {
         if (error) {
           deferred.reject(error);

@@ -116,12 +116,9 @@ function receivedMessage(event) {
   if (messageText) {
     if (messageText.toString().toUpperCase() == 'NO' || messageText.toString().toUpperCase() == 'START' || messageText.toString().toUpperCase() == 'RESTART') {
       implement.get_started(senderID)
-
-      // const sessionId = session(senderID);
-      // if (messageText.toString().toUpperCase() == 'HEY' ||
-      //   messageText.toString().toUpperCase() == 'HELLO' ||
-      //   messageText.toString().toUpperCase() == 'HI') {
-      //   implement.welcome(senderID);
+    }
+    else if(messageText.toString().toUpperCase() == 'SURE'){
+      implement.sendLoginButton(senderID)
     } else {
       const sessionId = findOrCreateSession(senderID);
       console.log('session id is ==' + sessionId)

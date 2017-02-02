@@ -29,12 +29,6 @@ module.exports = function() {
               console.log(result)
               return sendLoginButton(senderID)
             })
-            // .then(function() {
-            //   var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
-            //   var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
-            //   return fbTemplate.reply(message, senderID)
-            // })
-
         } else {
           console.log('logged in')
           var message = fbTemplate.textMessage('You are already logged in')
@@ -83,17 +77,7 @@ module.exports = function() {
   }
 
   var greetUser = function(senderID) {
-    // return externalApi.getUserProfile(senderID)
-    //   .then(function(user) {
-    //     var profile = JSON.parse(user)
-    //     var name = profile.first_name
-    //     var message = fbTemplate.textMessage('Hi ' + name + '.\nTimeNote bot allows you to explore any city in the world as a city guide. ')
-    //     return fbTemplate.reply(message, senderID)
-    //   })
-    //   .then(function() {
     return get_started(senderID)
-      //   })
-
   }
   var sayGoodBye = function(senderID) {
     return externalApi.getUserProfile(senderID)
@@ -526,7 +510,7 @@ module.exports = function() {
             //
             else {
               if (more === true) {
-                var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + '-' + offset + '-' + lat + '-' + long)
+                var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + ',' + offset + ',' + lat + ',' + long)
                 elements[i] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
               } else {}
             }
