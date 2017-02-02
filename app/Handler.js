@@ -136,9 +136,12 @@ function HandlePayload(payload, senderID) {
     var minDate = str[2]
       // var long = str[3]
     implement.getCalendarEvents(senderID, maxDate, minDate)
-  } else if (payload.indexOf(constants.MORE) != -1) {
+  } 
+
+  //
+  else if (payload.indexOf(constants.MORE) != -1) {
     console.log('getMoreEvents')
-    var str = payload.split("-");
+    var str = payload.split(",");
     var offset = str[1]
     var lat = str[2]
     var long = str[3]
