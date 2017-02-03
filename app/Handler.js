@@ -58,7 +58,7 @@ function HandlePayload(payload, senderID) {
   //
   else if (payload.indexOf(constants.SAVE_EVENT) != -1) {
     console.log('events for SAVE_EVENT')
-    var temp = payload.split('-')
+    var temp = payload.split(',')
     var event_id = temp[1]
     var lat = temp[2]
     var long = temp[3]
@@ -151,7 +151,7 @@ function HandlePayload(payload, senderID) {
   else if (payload.indexOf(constants.DETAILS) != -1) {
     console.log('getEventById')
 
-    var str = payload.split("-");
+    var str = payload.split(",");
     var id = str[1];
     var lat = str[2];
     var lng = str[3]
@@ -169,7 +169,7 @@ function HandlePayload(payload, senderID) {
   //
   else if (payload.indexOf(constants.EVENTS_LIST) != -1) {
     console.log('hi')
-    var str = payload.split("-");
+    var str = payload.split(",");
     // var id = str[1];
     var lat = str[1]
     var lng = str[2]

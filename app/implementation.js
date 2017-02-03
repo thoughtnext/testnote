@@ -213,7 +213,7 @@ module.exports = function() {
             for (var i = 0; i < length; i++) {
               var lat = data[i].latitude
               var long = data[i].longitude
-              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id + '-' + lat + '-' + long)
+              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + ',' + data[i].id + ',' + lat + ',' + long)
               var btn2 = fbTemplate.createShareButton()
               var btn = [btn1, btn2];
               var date;
@@ -235,7 +235,7 @@ module.exports = function() {
             for (var i = 0; i < 9; i++) {
               var lat = data[i].latitude
               var long = data[i].longitude
-              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id + '-' + lat + '-' + long)
+              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + ',' + data[i].id + ',' + lat + ',' + long)
               var btn2 = fbTemplate.createShareButton()
               var btn = [btn1, btn2];
               var date;
@@ -484,10 +484,10 @@ module.exports = function() {
           for (var i = 0; i <= data.length; i++) {
             if (i < data.length) {
               var is_saved = data[i].is_saved
-              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + '-' + data[i].id + '-' + lat + '-' + long)
+              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + ',' + data[i].id + ',' + lat + ',' + long)
               var btn2 = fbTemplate.createShareButton()
               if (is_saved === 0 || is_saved == 0 || is_saved == '0') {
-                var btn3 = fbTemplate.createPostBackButton('SAVE', constants.SAVE_EVENT + '-' + data[i].id + '-' + data[i].latitude + '-' + data[i].longitude)
+                var btn3 = fbTemplate.createPostBackButton('SAVE', constants.SAVE_EVENT + ',' + data[i].id + ',' + data[i].latitude + ',' + data[i].longitude)
                 var btn = [btn1, btn3, btn2];
               } else {
                 var btn = [btn1, btn2];
@@ -629,7 +629,7 @@ module.exports = function() {
               console.log(false)
               var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
               var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
-              var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
+              var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + ',' + lat + ',' + long)
               var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
               console.log('not logged in')
 
@@ -640,7 +640,7 @@ module.exports = function() {
               if (is_saved === '1' || is_saved === 1) {
                 var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr1, qr0])
               } else {
-                var qr2 = fbTemplate.createQuickReply('Save this event', constants.SAVE_EVENT + '-' + id + '-' + lat + '-' + long)
+                var qr2 = fbTemplate.createQuickReply('Save this event', constants.SAVE_EVENT + ',' + id + ',' + lat + ',' + long)
                 var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr1, qr0])
               }
             }
