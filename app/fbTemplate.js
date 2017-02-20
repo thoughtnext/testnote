@@ -69,9 +69,9 @@ function quickReplyMessage(title, quick_replies) {
   }
 }
 
-function locationMessage() {
+function locationMessage(text) {
   return {
-    "text": "Please share your location:",
+    "text": text,
     "quick_replies": [{
       "content_type": "location",
     }]

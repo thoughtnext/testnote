@@ -37,8 +37,29 @@ define("YES_LOGIN", "YES_LOGIN");
 define("NO_LOGIN", "NO_LOGIN");
 define("VIEW_APP", "VIEW_APP");
 
-    
 // constants.DETAILS
+// firebase
+define("useTimenote", "useTimenote");
+define("sendLoginButton", "sendLoginButton");
+define("discoverEvents", "discoverEvents");
+define("locationMessage", "locationMessage");
+define("selectedLocation", "selectedLocation");
+define("promptUserForInputLocation", "promptUserForInputLocation");
+define("getCity", "getCity");
+define("lastOptions", "lastOptions");
+define("showMyCalendarInPersistentMenu", "showMyCalendarInPersistentMenu");
+define("getEventByIdOptions", "getEventByIdOptions");
+define("showMyCalendar", "showMyCalendar");
+define("downloadLink", "downloadLink");
+define("viewApp", "viewApp");
+define("saveEvent", "saveEvent");
+define("afterLogin", "afterLogin");
+define("Logout", "Logout");
+define("getCalendarEvents", "getCalendarEvents");
+define("getEventsByLocation", "getEventsByLocation");
+define("sorryMsg", "sorryMsg");
+define("promptLogout", "promptLogout");
+
 
 
 

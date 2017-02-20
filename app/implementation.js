@@ -7,7 +7,10 @@ var fbTemplate = require('./fbTemplate'),
   fs = require("fs"),
   _ = require("underscore"),
   wit = require('./wit'),
-  moment = require('moment')
+  messenger = require("./messenger"),
+  moment = require('moment'),
+  Adapter = require("./Adapter")
+  // db = new Adapter();
 
 module.exports = function() {
 
@@ -39,35 +42,46 @@ module.exports = function() {
         }
       })
   }
-  var get_started = function(senderID) {
 
+  var get_started = function(senderID) {
+    var islogged;
     return checkLoginStatus(senderID)
-      .then(function(islogged) {
-        console.log('[imp.js - 19] ' + islogged)
+      .then(function(isloggedin) {
+        islogged = isloggedin;
+        return messenger.getLocale(senderID)
+      })
+      .then(function(userLocale) {
+        return Adapter.getText(constants.useTimenote, userLocale)
+      })
+      .then(function(result) {
+        console.log('hi')
+        var txt = result
+
         if (islogged === '0' || islogged === null) {
-          console.log('not logged in')
-          externalApi.getUserProfile(senderID)
+          return externalApi.getUserProfile(senderID)
             .then(function(user) {
               var profile = JSON.parse(user)
               var name = profile.first_name
               return externalApi.checkBotUsers(name, senderID)
             })
-            .then(function(result) {
-              var text = fbTemplate.textMessage('Use the first social calendar "Timenote"')
+            .then(function() {
+              var text = fbTemplate.textMessage(txt.ifNotLoggedIn.textMessage)
               return fbTemplate.reply(text, senderID)
-                .then(function() {
-                  var qr0 = fbTemplate.createQuickReply('Yes', constants.YES_LOGIN)
-                  var qr1 = fbTemplate.createQuickReply('Continue w/o Login', constants.NO_LOGIN)
-                    // var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
-                  var message = fbTemplate.quickReplyMessage("Do you want to login ?", [qr0, qr1])
-                  return fbTemplate.reply(message, senderID)
-                })
             })
-
-
-        } else {
-          console.log('logged in')
-          var message = fbTemplate.textMessage('You are already logged in')
+            .then(function() {
+              var obj = txt.ifNotLoggedIn.quickReplyMessage.qr
+              var qr = []
+              for (var prop in obj) {
+                qr.push(fbTemplate.createQuickReply(obj[prop].text, obj[prop].payload))
+              }
+              var message = fbTemplate.quickReplyMessage(txt.ifNotLoggedIn.quickReplyMessage.message, qr)
+              return fbTemplate.reply(message, senderID)
+            })
+        }
+        //
+        else {
+          console.log(islogged)
+          var message = fbTemplate.textMessage(txt.ifLoggedIn.textMessage)
           return fbTemplate.reply(message, senderID)
             .then(function() {
               return whereToCheckEvents(senderID)
@@ -79,7 +93,9 @@ module.exports = function() {
   var greetUser = function(senderID) {
     return get_started(senderID)
   }
+
   var sayGoodBye = function(senderID) {
+    /*Extra can be removed*/
     return externalApi.getUserProfile(senderID)
       .then(function(user) {
         var profile = JSON.parse(user)
@@ -90,46 +106,54 @@ module.exports = function() {
   }
 
   var afterLogin = function(senderID) {
-    externalApi.getUserProfile(senderID)
+    var txt;
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        return Adapter.getText(constants.afterLogin, userLocale)
+      })
+      .then(function(result) {
+        txt = result;
+        return externalApi.getUserProfile(senderID)
+      })
       .then(function(user) {
         var profile = JSON.parse(user)
         var name = profile.first_name
-        console.log(name)
-        var message = fbTemplate.textMessage('Congratulations ' + name + ' ! \nYou have successfully logged in to your TimeNote account.')
-        console.log(message)
+        var message = fbTemplate.textMessage(txt.textMessage[0] + name + txt.textMessage[1])
         return fbTemplate.reply(message, senderID)
           .then(function() {
-            console.log("Congrats")
             return whereToCheckEvents(senderID)
           })
       })
   }
 
   var saveEvent = function(senderID, event_id, lat, long) {
-    return externalApi.saveEvent(senderID, event_id, lat, long)
+    var txt;
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        return Adapter.getText(constants.saveEvent, userLocale)
+      })
       .then(function(result) {
-        console.log(result)
+        txt = result;
+        return externalApi.saveEvent(senderID, event_id, lat, long)
+      })
+      .then(function(result) {
         if (result.success == 'true') {
-          var message = fbTemplate.textMessage('Cool! This event has been saved to your calendar now.')
-          fbTemplate.reply(message, senderID)
+          var message = fbTemplate.textMessage(txt.ifSuccess.textMessage)
+          return fbTemplate.reply(message, senderID)
             .then(function() {
-              var qr0 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
-              var qr1 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
-                // var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + '-' + lat + '-' + long)
-              var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr0, qr1])
+              var obj = txt.ifSuccess.quickReplyMessage.qr
+              var qr = []
+              for (var prop in obj) {
+                qr.push(fbTemplate.createQuickReply(obj[prop].text, obj[prop].payload))
+              }
+              var message = fbTemplate.quickReplyMessage(txt.ifSuccess.quickReplyMessage.message, qr)
               return fbTemplate.reply(message, senderID)
             })
         } else {
-          var message = fbTemplate.textMessage('Please login first to save this event')
-          fbTemplate.reply(message, senderID)
+          var message = fbTemplate.textMessage(txt.ifNotSuccess.textMessage)
+          return fbTemplate.reply(message, senderID)
             .then(function(result) {
-              console.log(result)
               return sendLoginButton(senderID)
-                // .then(function() {
-                //   var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
-                //   var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
-                //   return fbTemplate.reply(message, senderID)
-                // })
             })
         }
       })
@@ -142,56 +166,67 @@ module.exports = function() {
         console.error('Error fetching login status for this user : ' + senderID)
       })
   }
+
   var Logout = function(senderID) {
-    return externalApi.checkLoginStatus(senderID)
+    var txt;
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        return Adapter.getText(constants.Logout, userLocale)
+      })
+      .then(function(result) {
+        txt = result;
+        return externalApi.checkLoginStatus(senderID)
+      })
       .then(function(islogged) {
         if (islogged === '0' || islogged === null) {
-          console.log('not logged in')
-          var message = fbTemplate.textMessage('You were already logged out')
-          fbTemplate.reply(message, senderID)
+          var message = fbTemplate.textMessage(txt.ifLoggedOut.textMessage)
+          return fbTemplate.reply(message, senderID)
         } else {
           return externalApi.Logout(senderID)
             .then(function(result) {
               if (result) {
-                var message = fbTemplate.textMessage('You have successfully logged out of your TimeNote account')
-                fbTemplate.reply(message, senderID)
+                var message = fbTemplate.textMessage(txt.ifLoggedIn.textMessage)
+                return fbTemplate.reply(message, senderID)
               }
             })
         }
       })
       .then(function() {
         return sendLoginButton(senderID)
-          //   // })
-          //   .then(function() {
-          // var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
-          // var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
-          // return fbTemplate.reply(message, senderID)
-          // })
       })
   }
   var showMyCalendar = function(senderID) {
-    var qr1 = fbTemplate.createQuickReply('Today', constants.TODAY)
-      // var qr2 = fbTemplate.createQuickReply('Tomorrow', constants.TOMORROW)
-    var qr2 = fbTemplate.createQuickReply('This Week', constants.THIS_WEEK)
-      // var qr4 = fbTemplate.createQuickReply('This Weekend', constants.THIS_WEEKEND)
-      // var qr3 = fbTemplate.createQuickReply('Next 7 Days', constants.NEXT_7_DAYS)
-    var qr5 = fbTemplate.createQuickReply('Next 30 Days', constants.NEXT_30_DAYS)
-    var qr6 = fbTemplate.createQuickReply('Back to Menu', constants.BACK_TO_MENU)
-    var qr7 = fbTemplate.createQuickReply('View App', constants.VIEW_APP)
-    var message = fbTemplate.quickReplyMessage('You want to see events for ', [qr1, qr2, qr5, qr6, qr7])
-    return fbTemplate.reply(message, senderID)
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        return Adapter.getText(constants.showMyCalendar, userLocale);
+      })
+      .then(function(txt) {
+        var qr = []
+        var obj = txt.quickReplyMessage.qr
+        console.log(obj)
+        for (var i = 0; i < obj.length; i++) {
+          qr.push(fbTemplate.createQuickReply(obj[i].text, obj[i].payload))
+        }
+        var message = fbTemplate.quickReplyMessage(txt.quickReplyMessage.message, qr)
+        return fbTemplate.reply(message, senderID)
+      })
   }
 
   var showMyCalendarInPersistentMenu = function(senderID) {
-    console.log('hi')
+    var islogged;
     return checkLoginStatus(senderID)
-      .then(function(islogged) {
-        console.log(islogged)
-        console.log('[imp.js - 19] ' + islogged)
+      .then(function(isloggedin) {
+        islogged = isloggedin;
+        return messenger.getLocale(senderID)
+      })
+      .then(function(userLocale) {
+        return Adapter.getText(constants.showMyCalendarInPersistentMenu, userLocale)
+      })
+      .then(function(txt) {
+        console.log(txt)
         if (islogged === '0' || islogged === null) {
-          console.log('not logged in')
-          var otherCity = fbTemplate.createAccountLinkingButton('https://timenotelogin.herokuapp.com/')
-          var message = fbTemplate.buttonMessage('Click on login to log into your Timenote account', [otherCity])
+          btn = (fbTemplate.createAccountLinkingButton(txt.ifNotLoggedIn.buttonMessage.btn.url))
+          var message = fbTemplate.buttonMessage(txt.ifNotLoggedIn.buttonMessage.message, [btn])
           return fbTemplate.reply(message, senderID)
         } else {
           showMyCalendar(senderID)
@@ -202,8 +237,19 @@ module.exports = function() {
   // after
 
   var getCalendarEvents = function(senderID, maxDate, minDate) {
-    externalApi.getProfileWebsite(senderID, maxDate, minDate)
+    var txt;
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        return Adapter.getText(constants.getCalendarEvents, userLocale);
+      })
       .then(function(result) {
+        txt = result;
+        return externalApi.getProfileWebsite(senderID, maxDate, minDate)
+      })
+      .then(function(result) {
+        console.log('[250]')
+        console.log(result)
+        var btn = []
         var data = JSON.parse(result).data.timers
         var length = parseInt(data.length)
         var elements = []
@@ -213,9 +259,10 @@ module.exports = function() {
             for (var i = 0; i < length; i++) {
               var lat = data[i].latitude
               var long = data[i].longitude
-              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + ',' + data[i].id + ',' + lat + ',' + long)
-              var btn2 = fbTemplate.createShareButton()
-              var btn = [btn1, btn2];
+              btn.push(fbTemplate.createPostBackButton(txt.lessEvents.createPostBackButton.text, txt.lessEvents.createPostBackButton.payload + ',' + data[i].id + ',' + lat + ',' + long))
+              btn.push(fbTemplate.createShareButton())
+              console.log('btn')
+                // var btn = [btn1, btn2];
               var date;
               var time;
               var datetimestamp = new Date(data[i].time * 1000)
@@ -235,9 +282,9 @@ module.exports = function() {
             for (var i = 0; i < 9; i++) {
               var lat = data[i].latitude
               var long = data[i].longitude
-              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + ',' + data[i].id + ',' + lat + ',' + long)
-              var btn2 = fbTemplate.createShareButton()
-              var btn = [btn1, btn2];
+              btn.push(fbTemplate.createPostBackButton(txt.moreEvents.postBackButton.text, txt.moreEvents.postBackButton.payload + ',' + data[i].id + ',' + lat + ',' + long))
+              btn.push(fbTemplate.createShareButton())
+                // var btn = [btn1, btn2];
               var date;
               var time;
               var datetimestamp = new Date(data[i].time * 1000)
@@ -254,15 +301,14 @@ module.exports = function() {
               elements[i] = fbTemplate.createElement(data[i].name + ', ' + data[i].location_infos_uni, date + ' ' + time, '', baseUrl + res[0] + '_medium.jpg', btn)
             }
             var minDate = parseInt(data[8].time) + 1
-            var btn = fbTemplate.createPostBackButton('More Events', constants.MORE_EVENTS + '-' + maxDate + '-' + minDate)
-            elements[9] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
+            btn = fbTemplate.createPostBackButton(txt.moreEvents.createPostBackButton.text, txt.moreEvents.createPostBackButton.payload + '-' + maxDate + '-' + minDate)
+            elements[9] = fbTemplate.createElement(txt.moreEvents.createElement.title, txt.moreEvents.createElement.subtitle, '', txt.moreEvents.createElement.image, btn)
           }
 
           var message = fbTemplate.genericMessage(elements)
           return fbTemplate.reply(message, senderID)
         } else {
-          var message = fbTemplate.textMessage('You have no events for this date.')
-          console.log(message)
+          var message = fbTemplate.textMessage(txt.noEvents.textMessage)
           return fbTemplate.reply(message, senderID)
         }
       })
@@ -354,20 +400,33 @@ module.exports = function() {
   }
 
   var sendLoginButton = function(senderID) {
+    var islogged;
     return checkLoginStatus(senderID)
-      .then(function(islogged) {
-        console.log('[imp.js - 19] ' + islogged)
+      .then(function(isloggedin) {
+        islogged = isloggedin;
+        return messenger.getLocale(senderID)
+      })
+      .then(function(userLocale) {
+        return Adapter.getText(constants.sendLoginButton, userLocale)
+      })
+      .then(function(result) {
+        var txt = result;
         if (islogged === '0' || islogged === null) {
-          var otherCity = fbTemplate.createAccountLinkingButton('https://timenotelogin.herokuapp.com/')
-          var message = fbTemplate.buttonMessage('Click on login to log into your TimeNote account', [otherCity])
+          var btn = []
+          btn.push(fbTemplate.createAccountLinkingButton(txt.ifNotLoggedIn.buttonMessage.button.url))
+          var message = fbTemplate.buttonMessage(txt.ifNotLoggedIn.buttonMessage.message, btn)
           return fbTemplate.reply(message, senderID)
             .then(function() {
-              var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
-              var message = fbTemplate.quickReplyMessage('Or do you want to explore without login ?', [qr2])
-              return fbTemplate.reply(message, senderID)
+              var qr = [];
+              var tempQR = txt.ifNotLoggedIn.quickReplyMessage.qr;
+              for (var i = 0; i < tempQR.length; i++) {
+                qr.push(fbTemplate.createQuickReply(tempQR[i].text, tempQR[i].payload));
+              }
+              var message = fbTemplate.quickReplyMessage(txt.ifNotLoggedIn.quickReplyMessage.message, qr)
+              return fbTemplate.reply(message, senderID);
             })
         } else {
-          var message = fbTemplate.textMessage('You are already logged in to  your TimeNote account')
+          var message = fbTemplate.textMessage(txt.ifLoggedIn.textMessage);
           return fbTemplate.reply(message, senderID)
             .then(function() {
               return whereToCheckEvents(senderID)
@@ -377,6 +436,9 @@ module.exports = function() {
   }
 
   var promptForLogin = function(senderID) {
+    /*
+      // not required - extra function - can be removed
+    */
     var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
     var qr2 = fbTemplate.createQuickReply('Continue w/o Login', constants.EXPLORE_WITHOUT_LOGIN)
     var message = fbTemplate.quickReplyMessage('So, what do you wanna do ?', [qr1, qr2])
@@ -384,36 +446,60 @@ module.exports = function() {
   }
 
   var whereToCheckEvents = function(senderID) {
+    var islogged;
     return checkLoginStatus(senderID)
-      .then(function(islogged) {
-        console.log('[imp.js - 19] ' + islogged)
+      .then(function(isloggedin) {
+        islogged = isloggedin
+        return messenger.getLocale(senderID)
+      })
+      .then(function(userLocale) {
+        var locale = userLocale
+        return Adapter.getText(constants.discoverEvents, locale)
+      })
+      .then(function(txt) {
         if (islogged === '0' || islogged === null) {
-          console.log('not logged in')
-          var nearBy = fbTemplate.createPostBackButton('NEARBY ME', constants.NEARBY_ME)
-          var otherCity = fbTemplate.createPostBackButton('ANOTHER CITY', constants.ANOTHER_CITY)
-          var message = fbTemplate.buttonMessage('Discover events in the city of your choice', [nearBy, otherCity])
-          return fbTemplate.reply(message, senderID)
+          var obj = txt.ifNotLoggedIn.buttonMessage.postback
+          var buttons = []
+          for (var prop in obj) {
+            buttons.push(fbTemplate.createPostBackButton(obj[prop].text, obj[prop].payload))
+          }
+          var message = fbTemplate.buttonMessage(txt.ifNotLoggedIn.buttonMessage.message, buttons)
         }
         //
         else {
-          console.log('logged in')
-          var nearBy = fbTemplate.createPostBackButton('NEARBY ME', constants.NEARBY_ME)
-          var otherCity = fbTemplate.createPostBackButton('ANOTHER CITY', constants.ANOTHER_CITY)
-          var myCalendar = fbTemplate.createPostBackButton('MY CALENDAR', constants.MY_CALENDAR)
-          var message = fbTemplate.buttonMessage('Discover events in the city of your choice', [nearBy, otherCity, myCalendar])
-          return fbTemplate.reply(message, senderID)
+          var obj = txt.ifLoggedIn.buttonMessage.postback
+          var buttons = []
+          for (var prop in obj) {
+            buttons.push(fbTemplate.createPostBackButton(obj[prop].text, obj[prop].payload))
+          }
+          var message = fbTemplate.buttonMessage(txt.ifLoggedIn.buttonMessage.message, buttons)
         }
+        return fbTemplate.reply(message, senderID)
       })
   }
 
   var promptUserForInputLocation = function(senderID) {
-    var message = fbTemplate.textMessage('Write the city you want.')
-    return fbTemplate.reply(message, senderID)
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        var locale = userLocale
+        return Adapter.getText(constants.promptUserForInputLocation, locale)
+      })
+      .then(function(txt) {
+        var message = fbTemplate.textMessage(txt.message)
+        return fbTemplate.reply(message, senderID)
+      })
   }
 
   var promptUserForLocation = function(senderID) {
-    var message = fbTemplate.locationMessage()
-    return fbTemplate.reply(message, senderID)
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        var locale = userLocale
+        return Adapter.getText(constants.locationMessage, locale)
+      })
+      .then(function(txt) {
+        var message = fbTemplate.locationMessage(txt.message)
+        return fbTemplate.reply(message, senderID)
+      })
   }
 
   var getCity = function(city) {
@@ -440,17 +526,30 @@ module.exports = function() {
   }
 
   var promptCityConfirmationFromUser = function(text, senderID) {
-    return getCity(text)
+    console.log('hi')
+    var txt;
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        var locale = userLocale
+        return Adapter.getText(constants.getCity, locale)
+      })
+      .then(function(txt1) {
+        txt = txt1
+        console.log(txt)
+        return getCity(text)
+      })
       .then(function(result) {
+        console.log(result)
         if (result != undefined) {
           var placeid = result.place_id
           var city = result.description;
-          var qr1 = fbTemplate.createQuickReply('Yes', constants.YES_CONFIRMATION_FOR_CITY + '-' + placeid)
-          var qr2 = fbTemplate.createQuickReply('No', constants.NO_CONFIRMATION_FOR_CITY)
-          var message = fbTemplate.quickReplyMessage('Did you mean ' + city + ' ?', [qr1, qr2])
+          var qr = []
+          qr.push(fbTemplate.createQuickReply(txt.quickReplyMessage.qr['0'].text, txt.quickReplyMessage.qr['0'].payload + '-' + placeid))
+          qr.push(fbTemplate.createQuickReply(txt.quickReplyMessage.qr['1'].text, txt.quickReplyMessage.qr['1'].payload))
+          var message = fbTemplate.quickReplyMessage(txt.quickReplyMessage.message[0] + city + txt.quickReplyMessage.message[1], qr)
           return fbTemplate.reply(message, senderID)
         } else {
-          var message = fbTemplate.textMessage('Sorry. I could not understand your query. ')
+          var message = fbTemplate.textMessage(txt.textMessage)
           return fbTemplate.reply(message, senderID)
             .then(function() {
               promptUserForInputLocation(senderID)
@@ -461,15 +560,22 @@ module.exports = function() {
 
   var getEventsByLocation = function(lat, long, offset, senderID) {
     var senderID = parseInt(senderID)
-    return externalApi.getEventsByLocation(lat, long, offset, senderID)
+    var txt;
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        return Adapter.getText(constants.getEventsByLocation, userLocale);
+      })
       .then(function(result) {
-        // console.log(result)
+        txt = result;
+        return externalApi.getEventsByLocation(lat, long, offset, senderID)
+      })
+      .then(function(result) {
         var body = JSON.parse(result)
         var data = body.data.nearby;
         var more = body.data.more
         if (data.length <= 0) {
           console.log('No result')
-          var message = fbTemplate.textMessage('Sorry. There are no events near your location.')
+          var message = fbTemplate.textMessage(txt.noEvents.textMessage)
           return fbTemplate.reply(message, senderID)
             .then(function() {
               return whereToCheckEvents(senderID)
@@ -479,18 +585,19 @@ module.exports = function() {
             })
         } else {
           var offset = body.data.offset
-          var btn = [];
           var elements = [];
           for (var i = 0; i <= data.length; i++) {
             if (i < data.length) {
+              var btn = [];
+
               var is_saved = data[i].is_saved
-              var btn1 = fbTemplate.createPostBackButton('DETAILS', constants.DETAILS + ',' + data[i].id + ',' + lat + ',' + long)
-              var btn2 = fbTemplate.createShareButton()
+              btn.push(fbTemplate.createPostBackButton(txt.lessEvents.createPostBackButton.detailsBtn.text, txt.lessEvents.createPostBackButton.detailsBtn.payload + ',' + data[i].id + ',' + lat + ',' + long))
+              btn.push(fbTemplate.createShareButton())
               if (is_saved === 0 || is_saved == 0 || is_saved == '0') {
-                var btn3 = fbTemplate.createPostBackButton('SAVE', constants.SAVE_EVENT + ',' + data[i].id + ',' + data[i].latitude + ',' + data[i].longitude)
-                var btn = [btn1, btn3, btn2];
+                btn.push(fbTemplate.createPostBackButton(txt.lessEvents.createPostBackButton.saveBtn.text, txt.lessEvents.createPostBackButton.saveBtn.payload + ',' + data[i].id + ',' + data[i].latitude + ',' + data[i].longitude))
+                  // var btn = [btn1, btn3, btn2];
               } else {
-                var btn = [btn1, btn2];
+                // var btn = [btn1, btn2];
               }
               var date;
               var time;
@@ -509,9 +616,12 @@ module.exports = function() {
             }
             //
             else {
+              var btn = [];
+
               if (more === true) {
-                var btn = fbTemplate.createPostBackButton('More Events', constants.MORE + ',' + offset + ',' + lat + ',' + long)
-                elements[i] = fbTemplate.createElement('More Events', 'Click to load more events', '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', [btn])
+                console.log(offset + ',' + lat + ',' + long)
+                btn.push(fbTemplate.createPostBackButton(txt.moreEvents.createPostBackButton.text, txt.moreEvents.createPostBackButton.payload + ',' + offset + ',' + lat + ',' + long))
+                elements[i] = fbTemplate.createElement(txt.moreEvents.createElement.title, txt.moreEvents.createElement.subtitle, '', 'https://sweatglow.files.wordpress.com/2014/10/more.jpg', btn)
               } else {}
             }
           }
@@ -525,32 +635,42 @@ module.exports = function() {
   }
 
   var lastOptions = function(senderID) {
-    return checkLoginStatus(senderID)
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        var locale = userLocale
+        return Adapter.getText(constants.lastOptions, locale)
+      })
+      .then(function(txt1) {
+        txt = txt1
+        console.log(txt)
+        return checkLoginStatus(senderID)
+      })
       .then(function(islogged) {
-        console.log('[imp.js - 19] ' + islogged)
+        console.log('[imp.js - 602] ' + islogged)
+        var qr = []
         if (islogged === '0' || islogged === null) {
           console.log('not logged in')
-            // var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
-          var qr2 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
-          var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
-          var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
-          var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr3, qr1])
-          return fbTemplate.reply(message, senderID)
+          var obj = txt.ifNotLoggedIn.quickReplyMessage.qr
+          for (var prop in obj) {
+            qr.push(fbTemplate.createQuickReply(obj[prop].text, obj[prop].payload))
+          }
+          var message = fbTemplate.quickReplyMessage(txt.ifNotLoggedIn.quickReplyMessage.message, qr)
         } else {
-          // var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
-          var qr2 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
-            // var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
-
-          var qr4 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
-          var qr5 = fbTemplate.createQuickReply('View App', constants.VIEW_APP)
-
-          var message = fbTemplate.quickReplyMessage("What's next ?", [qr2, qr4, qr5])
-          return fbTemplate.reply(message, senderID)
+          var obj = txt.ifLoggedIn.quickReplyMessage.qr
+          for (var prop in obj) {
+            qr.push(fbTemplate.createQuickReply(obj[prop].text, obj[prop].payload))
+          }
+          var message = fbTemplate.quickReplyMessage(txt.ifLoggedIn.quickReplyMessage.message, qr)
         }
+        return fbTemplate.reply(message, senderID)
+
       })
   }
 
   var options = function(senderID) {
+    /*
+      // not required - extra function - can be removed
+    */
     var qr1 = fbTemplate.createQuickReply('Restart', constants.RESTART)
     var qr2 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
       // var qr3 = fbTemplate.createQuickReply('More Features', constants.MORE_FEATURES)
@@ -558,8 +678,16 @@ module.exports = function() {
     return fbTemplate.reply(message, senderID)
   }
   var getEventsByUserLocation = function(lat, long, offset, address, senderID) {
-    var message = fbTemplate.textMessage('Your selected location is set to:\n ' + address)
-    return fbTemplate.reply(message, senderID)
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        var locale = userLocale
+        return Adapter.getText(constants.selectedLocation, locale)
+      })
+      .then(function(txt) {
+        console.log(txt)
+        var message = fbTemplate.textMessage(txt.message + address)
+        return fbTemplate.reply(message, senderID)
+      })
       .then(function() {
         getEventsByLocation(lat, long, offset, senderID)
       })
@@ -577,6 +705,7 @@ module.exports = function() {
         var body = result.timer
         var timer = body.time
         var isLoggedIn = result.is_logged
+        var islogged = result.is_logged
         console.log(isLoggedIn)
         var is_saved = body.is_saved
         console.log(is_saved)
@@ -610,39 +739,40 @@ module.exports = function() {
           .then(function() {
             return checkLoginStatus(senderID)
               .then(function(islogged) {
-                console.log('[imp.js - 19] ' + islogged)
                 if (islogged === '0' || islogged === null) {
-                  console.log('not logged in')
                   return downloadLink(senderID)
                 } else {}
               })
           })
           .then(function() {
-            console.log(isLoggedIn)
-            console.log(lat)
-            console.log(long)
-            return checkLoginStatus(senderID)
+            return messenger.getLocale(senderID)
           })
-          .then(function(islogged) {
-            console.log('[imp.js - 19] ' + islogged)
+          .then(function(userLocale) {
+            return Adapter.getText(constants.getEventByIdOptions, userLocale)
+          })
+          .then(function(txt) {
+            var islogged = isLoggedIn
+            var qr = []
             if (islogged === '0' || islogged === null) {
-              console.log(false)
-              var qr0 = fbTemplate.createQuickReply('Change Location', constants.GO_BACK)
-              var qr1 = fbTemplate.createQuickReply('Login', constants.LOGIN)
-              var qr2 = fbTemplate.createQuickReply('Events List', constants.EVENTS_LIST + ',' + lat + ',' + long)
-              var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr0, qr1])
-              console.log('not logged in')
-
-            } else {
-              console.log(true)
-              var qr0 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
-              var qr1 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
-              if (is_saved === '1' || is_saved === 1) {
-                var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr1, qr0])
-              } else {
-                var qr2 = fbTemplate.createQuickReply('Save this event', constants.SAVE_EVENT + ',' + id + ',' + lat + ',' + long)
-                var message = fbTemplate.quickReplyMessage("What\'s Next ?", [qr2, qr1, qr0])
+              var obj = txt.ifNotLoggedIn.quickReplyMessage.qr
+              for (prop in obj) {
+                if (obj[prop].payload === constants.EVENTS_LIST) {
+                  qr.push(fbTemplate.createQuickReply(obj[prop].text, obj[prop].payload + ',' + lat + ',' + long))
+                } else {
+                  qr.push(fbTemplate.createQuickReply(obj[prop].text, obj[prop].payload))
+                }
               }
+              var message = fbTemplate.quickReplyMessage(txt.ifNotLoggedIn.quickReplyMessage.message, qr)
+            } else {
+              var obj = txt.ifLoggedIn.quickReplyMessage.qr
+              var saveObject = txt.ifLoggedIn.quickReplyMessage.isNotSaved.qr
+              if (is_saved === '1' || is_saved === 1) {} else {
+                qr.push(fbTemplate.createQuickReply(saveObject.text, saveObject.payload + ',' + id + ',' + lat + ',' + long))
+              }
+              for (prop in obj) {
+                qr.push(fbTemplate.createQuickReply(obj[prop].text, obj[prop].payload))
+              }
+              var message = fbTemplate.quickReplyMessage(txt.ifLoggedIn.quickReplyMessage.message, qr)
             }
             return fbTemplate.reply(message, senderID)
           })
@@ -650,22 +780,45 @@ module.exports = function() {
   }
 
   function downloadLink(senderID) {
-    var button1 = fbTemplate.createWebUrlButton('Get Android App', 'https://play.google.com/store/apps/details?id=timenote.timenote')
-    var button2 = fbTemplate.createWebUrlButton('Get iOS App', 'https://appsto.re/il/aICV5.i')
-    var message = fbTemplate.buttonMessage('For more details you can download our app from below links. ', [button1, button2])
-    return fbTemplate.reply(message, senderID)
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        return Adapter.getText(constants.downloadLink, userLocale)
+      })
+      .then(function(txt) {
+        console.log(txt)
+        var buttons = []
+        var obj = txt.buttonMessage.btn
+        for (var prop in obj) {
+          buttons.push(fbTemplate.createWebUrlButton(obj[prop].text, obj[prop].url))
+        }
+        var message = fbTemplate.buttonMessage(txt.buttonMessage.message, buttons)
+        return fbTemplate.reply(message, senderID)
+      })
   }
 
-
   function viewApp(senderID) {
-    var button1 = fbTemplate.createWebUrlButton('Android App', 'https://play.google.com/store/apps/details?id=timenote.timenote')
-    var button2 = fbTemplate.createWebUrlButton('iOS App', 'https://appsto.re/il/aICV5.i')
-    var message = fbTemplate.buttonMessage('You can view the app here', [button1, button2])
-    return fbTemplate.reply(message, senderID)
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        return Adapter.getText(constants.viewApp, userLocale)
+      })
+      .then(function(txt) {
+        var text = txt
+        console.log(txt)
+        var buttons = []
+        var obj = txt.buttonMessage.btn
+        for (var prop in obj) {
+          buttons.push(fbTemplate.createWebUrlButton(obj[prop].text, obj[prop].url))
+        }
+        var message = fbTemplate.buttonMessage(txt.buttonMessage.message, buttons)
+        return fbTemplate.reply(message, senderID)
+      })
       .then(function() {
-        var qr0 = fbTemplate.createQuickReply('Back To Menu', constants.GO_BACK)
-        var qr1 = fbTemplate.createQuickReply('My Calendar', constants.MY_CALENDAR)
-        var message = fbTemplate.quickReplyMessage('What\'s Next ?', [qr0, qr1])
+        var qr = []
+        var obj = text.quickReplyMessage.qr
+        for (prop in obj) {
+          qr.push(fbTemplate.createQuickReply(obj[prop].text, obj[prop].payload))
+        }
+        var message = fbTemplate.quickReplyMessage(text.quickReplyMessage.message, qr)
         return fbTemplate.reply(message, senderID)
       })
   }
@@ -680,10 +833,32 @@ module.exports = function() {
   }
 
   function sorryMsg(senderID) {
-    var message = fbTemplate.textMessage("Sorry, I could't understand you. Here's what you can do with TimeNote Bot. ")
-    return fbTemplate.reply(message, senderID)
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        return Adapter.getText(constants.sorryMsg, userLocale)
+      })
+      .then(function(txt) {
+        var message = fbTemplate.textMessage(txt)
+        return fbTemplate.reply(message, senderID)
+      })
       .then(function() {
         whereToCheckEvents(senderID)
+      })
+  }
+
+  function promptLogout(senderID) {
+    return messenger.getLocale(senderID)
+      .then(function(userLocale) {
+        return Adapter.getText(constants.promptLogout, userLocale)
+      })
+      .then(function(txt) {
+        var qr = []
+        var obj = txt.quickReplyMessage.qr
+        for (prop in obj) {
+          qr.push(fbTemplate.createQuickReply(obj[prop].text, obj[prop].payload))
+        }
+        var message = fbTemplate.quickReplyMessage(txt.quickReplyMessage.message, qr)
+        return fbTemplate.reply(message, senderID)
       })
   }
 
@@ -720,6 +895,7 @@ module.exports = function() {
     sayGoodBye: sayGoodBye,
     viewApp: viewApp,
     get_started: get_started,
+    promptLogout: promptLogout,
     sorryMsg: sorryMsg
   };
 }

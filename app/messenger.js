@@ -5,12 +5,14 @@ var configuration = require('./configuration'),
   foo = require('./implementation'),
   implement = foo(),
   externalApi = require('./api'),
+  Q = require("q"),
   Handler = require("./Handler"),
   constants = require("./payload"),
   json = require('./location.json'),
   _ = require("underscore"),
   fs = require('fs'),
   Wit = require('node-wit').Wit;
+
 
 
 // ,
@@ -116,12 +118,11 @@ function receivedMessage(event) {
   if (messageText) {
     if (messageText.toString().toUpperCase() == 'NO' || messageText.toString().toUpperCase() == 'START' || messageText.toString().toUpperCase() == 'RESTART') {
       implement.get_started(senderID)
-    }
-    else if(messageText.toString().toUpperCase() == 'SURE'){
+    } else if (messageText.toString().toUpperCase() == 'SURE') {
       implement.sendLoginButton(senderID)
     } else {
       const sessionId = findOrCreateSession(senderID);
-      console.log('session id is ==' + sessionId)
+      // console.log('session id is ==' + sessionId)
 
       const context0 = {};
       client.runActions(sessionId, messageText, context0)
@@ -194,6 +195,26 @@ const findOrCreateSession = (fbid) => {
   return sessionId;
 };
 
+
+function getLocale(fbid) {
+  var locale;
+  var deferred = Q.defer();
+  var sessionId = findOrCreateSession(fbid)
+  if (sessions[sessionId].locale == undefined || sessions[sessionId].locale == null || sessions[sessionId].locale == '') {
+    externalApi.getUserLocale(fbid)
+      .then(function(locale) {
+        sessions[sessionId].locale = locale;
+        console.log('[ 207 ] getUserLocale '+locale)
+        deferred.resolve(locale)
+      })
+  } else {
+    locale = sessions[sessionId].locale;
+    console.log('[ 212 ] getUserLocale '+locale)
+    deferred.resolve(locale)
+  }
+  return deferred.promise;
+}
+
 // Our bot actions
 const actions = {
   send(request, response) {
@@ -242,6 +263,7 @@ const actions = {
   GreetUser({ sessionId, context, entities }) {
     const senderID = sessions[sessionId].fbid;
     console.log('senderID is == ' + senderID);
+    // console.log('GREETUSER')
     if (senderID) {
       // var message = fbTemplate.textMessage('Hi User. TimeNote')
       implement.greetUser(senderID)
@@ -256,6 +278,15 @@ const actions = {
       implement.sayGoodBye(senderID)
 
     }
+  },
+  Logout({ sessionId, context, entities }) {
+    const senderID = sessions[sessionId].fbid;
+    console.log('senderID is == ' + senderID);
+    if (senderID) {
+      // var message = fbTemplate.textMessage('Hi User. TimeNote')
+      implement.promptLogout(senderID)
+
+    }
   }
 };
 
@@ -264,8 +295,6 @@ const client = new Wit({
   actions
   // logger: new log.Logger(log.INFO)
 });
-
-
 
 /*
  * Delivery Confirmation Event
@@ -289,7 +318,6 @@ function receivedDeliveryConfirmation(event) {
 
   console.log("All message before %d were delivered.", watermark);
 }
-
 
 /*
  * Postback Event
@@ -357,3 +385,4 @@ exports.receivedMessageRead = receivedMessageRead;
 exports.receivedDeliveryConfirmation = receivedDeliveryConfirmation;
 exports.receivedPostback = receivedPostback;
 exports.receivedAccountLink = receivedAccountLink;
+exports.getLocale = getLocale;

@@ -128,6 +128,24 @@ function call() {
       });
       return deferred.promise;
     },
+    this.getUserLocale = function(userID) {
+      var deferred = Q.defer();
+      var options = {
+        method: 'GET',
+        url: 'https://graph.facebook.com/v2.6/' + userID + '?fields=locale&access_token=' + PAGE_ACCESS_TOKEN
+      };
+      request(options, function(error, response, body) {
+        if (error) {
+          console.log(error)
+          deferred.reject(error);
+        } else {
+          temp = JSON.parse(body).locale
+          locale = temp.split('_')[0]
+          deferred.resolve(locale)
+        }
+      });
+      return deferred.promise;
+    },
     this.checkBotUsers = function(username, user_fb_id) {
       var deferred = Q.defer();
       var options = {
