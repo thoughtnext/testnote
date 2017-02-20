@@ -141,7 +141,13 @@ function call() {
         } else {
           temp = JSON.parse(body).locale
           console.log(temp)
-          locale = temp.split('_')[0]
+          if(temp === undefined || temp === ''){
+            locale = 'en'
+          }
+          else {
+            locale = temp.split('_')[0]
+          }
+          
           deferred.resolve(locale)
         }
       });
