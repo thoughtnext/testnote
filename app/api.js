@@ -140,6 +140,7 @@ function call() {
           deferred.reject(error);
         } else {
           temp = JSON.parse(body).locale
+          console.log(temp)
           locale = temp.split('_')[0]
           deferred.resolve(locale)
         }
